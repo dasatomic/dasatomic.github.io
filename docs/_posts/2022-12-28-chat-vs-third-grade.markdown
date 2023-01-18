@@ -19,3 +19,9 @@ Cilj ovog posta je da ispita kako se ChatGPT nosi sa pitanjima koja zahtevaju lo
 Pa da krenemo.
 
 ![test](/assets/zadatak1.png)
+
+Za sada veoma impresivno.
+
+![test](/assets/zadatak2.png)
+
+Idemo dalje.
