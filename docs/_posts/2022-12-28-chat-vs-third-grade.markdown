@@ -12,6 +12,10 @@ Ali, kao što su domoroci verovali da fotoaparat uslikanom oduzima dušu, ChatGP
 
 ChatGPT će se pokazati u najboljem svetlu kada odgovara na pitanja koja ne zahtevaju korak u nepoznatno. Tačnije, kada piše o temi koja je već pokrivena u podacima nad kojim je treniran i ne zahteva logičko povezivanje koje vodi ka originalnim zaključcima. Naravno, mogućnost odgovoranja na kompleksne upite koji su uneti u formi ljudskog jezika predstavlja veliko tehnološko dostignuće i korak u evoluciji pretraživača.
 
-Cilj ovog posta je da ispita kako se ChatGPT nosi sa pitanjima koja ipak zahtevaju logičko rezonovanje i čiji se odgovor ne može naći web pretragom. Kao test uzećemo školsko takmičenje iz matematike za treći razred osnovne škole.
+Cilj ovog posta je da ispita kako se ChatGPT nosi sa pitanjima koja zahtevaju logičko rezonovanje i čiji se odgovor ne može naći web pretragom. Kao test uzećemo školsko takmičenje iz matematike za treći razred osnovne škole.
 
 ![test](/assets/test_matematika.jpg)
+
+Pa da krenemo.
+
+![test](/assets/zadatak1.png)
