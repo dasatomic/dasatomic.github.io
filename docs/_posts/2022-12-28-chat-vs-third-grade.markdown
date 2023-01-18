@@ -14,4 +14,4 @@ ChatGPT će se pokazati u najboljem svetlu kada odgovara na pitanja koja ne zaht
 
 Cilj ovog posta je da ispita kako se ChatGPT nosi sa pitanjima koja ipak zahtevaju logičko rezonovanje i čiji se odgovor ne može naći web pretragom. Kao test uzećemo školsko takmičenje iz matematike za treći razred osnovne škole.
 
-![test](assets/test_matematika.jpg)
+![test](/assets/test_matematika.jpg)
