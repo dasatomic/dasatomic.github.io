@@ -55,3 +55,5 @@ Hajde da mu malo pomognemo.
 ![test](/assets/zadatak5b.png)
 
 0/20.
+
+Krajnji rezultat je 40/100, što je impresivno, ali nedovoljno za prolaz na opštinsko takmičenje.
