@@ -25,3 +25,33 @@ Za sada veoma impresivno.
 ![test](/assets/zadatak2.png)
 
 Idemo dalje.
+
+![test](/assets/zadatak3a.png)
+
+Ok, ovo nije baš najsrećniji odgovor. Hajde da pokušamo da zadamo zadatak na engleskom.
+
+![test](/assets/zadatak3b.png)
+
+Nikakav napredak. Hajde da pokušamo da mu pomognemo.
+
+![test](/assets/zadatak3c.png)
+
+0/20. Idemo dalje.
+
+![test](/assets/zadatak4a.png)
+
+Ok, i mene uvek buni šta je koja stotina. Hajde da budemo precizniji.
+
+![test](/assets/zadatak4b.png)
+
+0/20. Idemo dalje.
+
+![test](/assets/zadatak5.png)
+
+Odgovor je interesantan, iako netačan. Za prvi deo može da dobije 5 poena, iako je netačan. Drugi deo je interesantan jer je progutao cifru 3 na kraju. Moja pretpostavka je da se ovo dešava jer desetocifreni brojevi izlaze iz opsega 32 bitnih celih brojeva, gde je najveći broj 2^32=4294967296. Izgleda da ChatGPT poznaje koncept broja i ne tretira ga samo kao niz karaktera. U ovom zadataku, gde su bitne i slovna reprezentacija broja i njegova prava vrednost ChatGPT odlučuje jednostavno da ignoriše poslednju cifru.
+
+Hajde da mu malo pomognemo.
+
+![test](/assets/zadatak5b.png)
+
+0/20.
