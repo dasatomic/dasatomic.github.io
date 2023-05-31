@@ -5,15 +5,15 @@ date:   2023-05-30 13:10:48 +0100
 categories: AI
 ---
 
-Strmoglav rast popularnosti velikih jezičkih modela (LLM) zagolicao je maštu celog sveta. U poziciji polovičnog razumevanja nalaze se i računarski eksperti, koji su tradicionalno bili u stanju da objasne kako rade kompajleri, operativni sistemi, računarske mreže, 3D grafika itd., ali i potpuni laici koje do sada nije interesovalo šta se dešava ispod površine.
+Strmoglav rast popularnosti velikih jezičkih modela (LLM) zagolicao je maštu celog sveta. U poziciji polovičnog razumevanja nalaze se i računarski eksperti, koji su tradicionalno bili u stanju da objasne kako rade to što rade ali i potpuni laici koje do sada nije interesovalo šta se dešava ispod površine.
 
-Deluje mi da većina ljudi napravi ogroman korak kojim preskoči sve početne stvari u oblasti mašinskog učenja i završi razmišljajući o tome šta će ChatGPT12 doneti.
+Deluje mi da većina ljudi napravi ogroman korak kojim preskoči sve početne stvari u oblasti mašinskog učenja i završi razmišljajući o tome šta će ChatGPT12 doneti i koliko smo daleko od opšte veštačke inteligencije.
 
 U ovom postu, pokušaćemo da se vratimo jednostavnijem svetu - treniraćemo model koji je sličan GPT2, bez ikakvih dodatnih koraka (human feedback and co) i sve ćemo raditi lokalno (veruj samo mašini na kojoj možeš da držiš noge dok je programiraš). Za trening modela ćemo koristiti knjige domaćih autora (Andrić, Crnjanski, Selimović).
 
-Naravno, nije razumno očekivati da priđemo ni blizu GPT kvalitetu generisanog teksta. Ali, hajde da vidimo koliko daleko možemo da dođemo iz ovako skromnog starta.
+Naravno, nije razumno očekivati da priđemo ni blizu GPT kvalitetu generisanog teksta. Ali, hajde da vidimo koliko daleko možemo da dođemo iz ovako skromnog početka.
 
-Sledi niz generisanog teksta tokom trening. U odabranim momentima tokom treninga, pitamo model da nastavi generisanje teksta koji počinje sa "Ово је мост ". Tehničke detalje ostavljam za kraj teksta.
+Sledi niz generisanog teksta tokom treninga. U odabranim momentima tokom treninga, pitamo model da nastavi generisanje teksta koji počinje sa "Ово је мост ". Tehničke detalje ostavljam za kraj teksta.
 
 | Generisani tekst | iteracija     |  vreme |
 |------------------|:-------------:|------:|
@@ -23,8 +23,9 @@ Sledi niz generisanog teksta tokom trening. U odabranim momentima tokom treninga
 | Ово је мост устано је почео шта су свога не већа трајне ниједног угио? Ча сам се, такасна срама ср... | 10000 | ~2h
 | Ово је мост на раду лавира оставио, јер буде у позоришту са тврдим сарајевом предвиђен. После вилке капије, нигде како Исаковичи чују у којој бога, док је требало сад слабије, наслеђивати, да га одваја. Уживао га је променљив. Ручало се да је рекла да врати у миргиналу нуде и његову личну огромну повратку у крани, непродорно компромис. Кнез је био одбачен на камулијама и поред терминала 2 из травице који треба од свега саме да сам се и незважно »страховити који смо кле | 20000 | ~4h
 
+----
 
-Prvo par detalja. Model je baziran na [transformer](https://arxiv.org/abs/1706.03762) arhitekturi. Toplo preporučujem [Zero to Hero](https://www.youtube.com/watch?v=VMj-3S1tku0&list=PLAqhIrjkxbuWI23v9cThsA9GvCAUhRvKZ) seriju predavanja, po kojoj je i napisan kod koji je odgovoran za lepotu koju vidite gore. Model je mali,oko 70 miliona parametara, treniran na više nego skromnim podacima (oko 16 miliona karaktera, odnosno malo više od 3MB). Koristimo predviđanje na nivou pojedinačnih karaktera (slova), što je opet inferiorna tehnika u poređenju sa predviđanjem tokena što je osnova pravih LLM-ova (recimo da je slog pandan token konceptu). Ovo znači da model na osnovu prethodne istorije bira sledeće slovo i tako u krug dok se ne generiše čitav tekst. Tokom svakog generisanja karaktera, gledamo istoriju od prethonih 64 karaktera. Naravno, svi ovi brojevi su nekoliko hiljada puta manji od brojeva koje ozbiljni modeli koriste.
+Prvo par detalja. Model je baziran na [transformer](https://arxiv.org/abs/1706.03762) arhitekturi. Toplo preporučujem [Zero to Hero](https://www.youtube.com/watch?v=VMj-3S1tku0&list=PLAqhIrjkxbuWI23v9cThsA9GvCAUhRvKZ) seriju predavanja, po kojoj je i napisan kod koji je odgovoran za lepotu koju vidite gore. Kod je mala modifikacija [NanoGPT-a](https://github.com/karpathy/nanoGPT). Model je mali,oko 70 miliona parametara, treniran na više nego skromnim podacima (oko 16 miliona karaktera, odnosno malo više od 3MB). Koristimo predviđanje na nivou pojedinačnih karaktera (slova), što je opet inferiorna tehnika u poređenju sa predviđanjem tokena što je osnova pravih LLM-ova (recimo da je slog pandan token konceptu). Ovo znači da model na osnovu prethodne istorije bira sledeće slovo i tako u krug dok se ne generiše čitav tekst. Tokom svakog generisanja karaktera, gledamo istoriju od prethonih 64 karaktera. Naravno, svi ovi brojevi su nekoliko hiljada puta manji od brojeva koje ozbiljni modeli koriste.
 
 Dakle, iako generisani tekst nije ni blizu magije koju GPT2+ modeli nude, ipak možemo da vidimo značajan napredak kroz iteracije. Na samom početku, generisani tekst je nasumičan, mada već vidimo kako model bira najučestalija slova, drži se kratkih reči i forsira znak za razmak. Posle 1000 iteracija i dalje ne pogađa reči, ali, strukturno, ovo već liči na rečenicu. Koristi sva slova, dužina reči deluje smisleno.
 
@@ -38,7 +39,6 @@ Iako ovaj primer nije uspeo da stigne do semantičkog nivoa (recimo da je hijera
 
 U nedostatku dobrog modela koći me pomoći da završim tekst, okrećem se blagoj patetici. Što bi Andrić rekao:
 
-```"Najbednija i najtragičnija od svih čovekovih slabosti nesumnjivo je njegova potpuna nesposobnost predviđanja, koja je u opštoj protivnosti sa tolikim njegovim darovima, veštinama i znanjima."```
-
+> "Najbednija i najtragičnija od svih čovekovih slabosti nesumnjivo je njegova potpuna nesposobnost predviđanja, koja je u opštoj protivnosti sa tolikim njegovim darovima, veštinama i znanjima."
 
 Možda su transformeri alat koji će nam pomoći da uhvatimo sve te fine, kompleksne paterne između događaja iz prošlosti i verovatnih budućnosti.
