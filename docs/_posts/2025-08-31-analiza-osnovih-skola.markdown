@@ -31,7 +31,15 @@ Analizirao sam podatke o performansama osnovnih škola u Srbiji i kreirao intera
 ## Interaktivna vizualizacija
 
 <div style="text-align: center; margin: 20px 0;">
-    <iframe src="/assets/skole.html" width="100%" height="1000" frameborder="0" style="border: 1px solid #ddd; border-radius: 4px;"></iframe>
+    <iframe src="/assets/skole.html" width="100%" height="700" frameborder="0" style="border: 1px solid #ddd; border-radius: 4px;"></iframe>
+</div>
+
+<div style="text-align: center; margin: 20px 0;">
+    <iframe src="/assets/district_exam_scores_boxplot.html" width="100%" height="700" frameborder="0" style="border: 1px solid #ddd; border-radius: 4px;"></iframe>
+</div>
+
+<div style="text-align: center; margin: 20px 0;">
+    <iframe src="/assets/district_grade_scores_boxplot.html" width="100%" height="700" frameborder="0" style="border: 1px solid #ddd; border-radius: 4px;"></iframe>
 </div>
 
 [Otvori u punoj veličini](/assets/skole.html){:target="_blank" class="btn"}
