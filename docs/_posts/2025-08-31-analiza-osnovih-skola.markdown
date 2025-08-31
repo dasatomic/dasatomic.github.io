@@ -5,6 +5,25 @@ date:   2025-08-31 10:10:48 +0100
 categories: DataScience
 ---
 
+<style>
+.post-content {
+    max-width: none !important;
+    width: 95vw !important;
+    margin-left: calc(-45vw + 50%) !important;
+}
+
+.site-main {
+    max-width: none !important;
+}
+
+@media screen and (max-width: 768px) {
+    .post-content {
+        width: 100% !important;
+        margin-left: 0 !important;
+    }
+}
+</style>
+
 # Analiza osnovnih škola u Srbiji
 
 Analizirao sam podatke o performansama osnovnih škola u Srbiji i kreirao interaktivnu vizualizaciju koja prikazuje ključne metrike i trendove.
