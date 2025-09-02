@@ -37,7 +37,7 @@ U ovom postu neću pokušati da donesem bilo kakve zaključke ili objašnjenja. 
 ## Interaktivne vizualizacije
 
 <div style="text-align: center; margin: 20px 0;">
-    <iframe src="/assets/skole.html" width="100%" height="700" frameborder="0" style="border: 1px solid #ddd; border-radius: 4px;"></iframe>
+    <iframe src="/assets/skole.html" width="100%" height="1000" frameborder="0" style="border: 1px solid #ddd; border-radius: 4px;"></iframe>
 </div>
 
 Napomena za sledeća dva grafika. Ovde su prikazane informacija na nivou pojedinačnih škola, ne agregirane informacije na nivou okruga. Ovo znači da linije percentila, recimo 75 percentil, znači da tri četvrtine škola imaju ovaj prosek ili viši. Ova računica ne uzima u obzir broj učenika u pojedinačnim školama. U vizualizacijama nisu uključene škole koje se imale manje od 20 učenika u osmom razredu.
