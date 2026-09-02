@@ -20,6 +20,7 @@ gem "base64"
 gem "logger"
 gem "bigdecimal"
 gem "webrick"
+gem "erb"
 
 # If you have any plugins, put them here!
 group :jekyll_plugins do
