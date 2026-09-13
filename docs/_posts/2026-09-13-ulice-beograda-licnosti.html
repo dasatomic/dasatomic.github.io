@@ -1,0 +1,872 @@
+---
+layout: null
+title:  "Po kome se zovu beogradske ulice"
+date:   2026-09-13 08:00:00 +0100
+categories: DataScience
+excerpt: "4.038 ulica u Beogradu nosi ime istorijske ličnosti. Interaktivna toplotna mapa godina rođenja: što je ulica bliže centru, to je ličnost starija."
+---
+<!doctype html>
+<html lang="sr-Latn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Po kome se zovu beogradske ulice — godine rođenja na mapi</title>
+<meta name="description" content="Interaktivna analiza beogradskih ulica nazvanih po istorijskim ličnostima, klasifikovanih po godini rođenja i prikazanih kao toplotna mapa na stvarnoj mapi Beograda.">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<style>
+
+/* ---------- tokens ---------- */
+:root{
+  color-scheme: light;
+  --bg:#ffffff; --surface-1:#fcfcfb; --surface-2:#f6f5f2;
+  --text-primary:#0b0b0b; --text-secondary:#52514e; --text-muted:#7c7a74;
+  --rule:#e6e4de; --grid:#eeece7;
+  --series-1:#2a78d6; --series-2:#eb6834; --series-3:#1baf7a;
+  --pos:#2a78d6; --neg:#e34948; --mid:#f0efec;
+  --mark-mute:#cbc9c2; --accent:#2a78d6;
+  --shadow:0 1px 2px rgba(0,0,0,.04),0 8px 24px -16px rgba(0,0,0,.18);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --bg:#141413; --surface-1:#1a1a19; --surface-2:#212120;
+    --text-primary:#ffffff; --text-secondary:#c3c2b7; --text-muted:#8f8e85;
+    --rule:#33332f; --grid:#2a2a28;
+    --series-1:#3987e5; --series-2:#d95926; --series-3:#199e70;
+    --pos:#3987e5; --neg:#e66767; --mid:#383835;
+    --mark-mute:#4a4a45; --accent:#3987e5;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px -16px rgba(0,0,0,.6);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --bg:#141413; --surface-1:#1a1a19; --surface-2:#212120;
+  --text-primary:#ffffff; --text-secondary:#c3c2b7; --text-muted:#8f8e85;
+  --rule:#33332f; --grid:#2a2a28;
+  --series-1:#3987e5; --series-2:#d95926; --series-3:#199e70;
+  --pos:#3987e5; --neg:#e66767; --mid:#383835;
+  --mark-mute:#4a4a45; --accent:#3987e5;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px -16px rgba(0,0,0,.6);
+}
+
+/* ---------- base ---------- */
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--bg); color:var(--text-primary);
+  font:400 17px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif;
+  font-feature-settings:"tnum" 0;
+}
+.wrap{max-width:1180px;margin:0 auto;padding:0 24px}
+.col{max-width:760px;margin:0 auto}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+
+/* ---------- masthead ---------- */
+.masthead{border-bottom:1px solid var(--rule);position:sticky;top:0;background:var(--bg);z-index:50}
+.masthead .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px;height:56px}
+.brand{font-weight:650;letter-spacing:-.01em;font-size:17px;color:var(--text-primary)}
+.mast-nav{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.mast-nav a{font-size:13.5px;color:var(--text-secondary);padding:5px 9px;border-radius:6px}
+.mast-nav a:hover{background:var(--surface-2);text-decoration:none;color:var(--text-primary)}
+.tbtn{border:1px solid var(--rule);background:var(--surface-1);color:var(--text-secondary);
+  border-radius:7px;padding:5px 10px;font-size:13px;cursor:pointer;font-family:inherit}
+.tbtn:hover{color:var(--text-primary);border-color:var(--text-muted)}
+
+/* ---------- post header ---------- */
+header.post{padding:56px 0 8px}
+h1{font-size:clamp(30px,4.6vw,44px);line-height:1.12;letter-spacing:-.022em;margin:0 0 14px;font-weight:680}
+.dek{font-size:19px;color:var(--text-secondary);margin:0 0 18px;line-height:1.55}
+.byline{font-size:14px;color:var(--text-muted);display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.byline .dot{opacity:.5}
+
+/* ---------- text ---------- */
+h2{font-size:27px;line-height:1.22;letter-spacing:-.016em;margin:64px 0 6px;font-weight:660;scroll-margin-top:72px}
+h2 .kicker{display:block;font-size:12.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--text-muted);font-weight:600;margin-bottom:9px}
+h3{font-size:19.5px;line-height:1.3;letter-spacing:-.01em;margin:44px 0 4px;font-weight:640;scroll-margin-top:72px}
+p{margin:14px 0}
+.lede{font-size:18.5px;color:var(--text-secondary)}
+small,.small{font-size:14px;color:var(--text-muted);line-height:1.55}
+ul,ol{padding-left:22px;margin:14px 0}
+li{margin:7px 0}
+strong{font-weight:640}
+hr{border:0;border-top:1px solid var(--rule);margin:56px 0}
+code{font:500 14px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--surface-2);
+  padding:2px 5px;border-radius:4px;color:var(--text-secondary)}
+.note{background:var(--surface-1);border:1px solid var(--rule);border-left:3px solid var(--accent);
+  border-radius:0 8px 8px 0;padding:14px 18px;margin:22px 0;font-size:15.5px;color:var(--text-secondary)}
+.note strong{color:var(--text-primary)}
+
+/* ---------- stat tiles ---------- */
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:24px 0}
+.tile{background:var(--surface-1);border:1px solid var(--rule);border-radius:10px;padding:14px 16px}
+.tile .v{font-size:29px;line-height:1.05;font-weight:640;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.tile .k{font-size:13px;color:var(--text-secondary);margin-top:5px;line-height:1.35}
+.tile .s{font-size:12.5px;color:var(--text-muted);margin-top:3px}
+
+/* ---------- figures ---------- */
+figure{margin:26px 0 0;background:var(--surface-1);border:1px solid var(--rule);border-radius:12px;
+  padding:18px 18px 10px;box-shadow:var(--shadow)}
+figure.wide{max-width:1180px;margin-left:calc(50% - min(590px,50vw - 24px));width:min(1132px,100vw - 48px)}
+.fig-h{margin-bottom:2px}
+.fig-t{font-size:16.5px;font-weight:640;letter-spacing:-.008em;margin:0}
+.fig-s{font-size:14px;color:var(--text-secondary);margin:5px 0 0;line-height:1.5}
+.controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:14px 0 4px}
+.ctl{display:flex;align-items:center;gap:7px;font-size:13.5px;color:var(--text-secondary)}
+.ctl select,.ctl input[type=range]{font-family:inherit}
+.ctl select{font-size:13.5px;padding:5px 8px;border:1px solid var(--rule);border-radius:7px;
+  background:var(--surface-2);color:var(--text-primary);max-width:260px}
+.ctl input[type=range]{accent-color:var(--accent);width:130px}
+.ctl output{font-variant-numeric:tabular-nums;color:var(--text-primary);font-weight:600;min-width:22px}
+.plot{width:100%}
+figcaption{font-size:13px;color:var(--text-muted);margin-top:8px;line-height:1.5;padding-bottom:6px}
+details.tbl{margin-top:6px;border-top:1px solid var(--rule);padding-top:8px}
+details.tbl summary{font-size:13px;color:var(--text-secondary);cursor:pointer;list-style:none;
+  display:inline-flex;align-items:center;gap:6px;padding:3px 0}
+details.tbl summary::-webkit-details-marker{display:none}
+details.tbl summary::before{content:"▸";font-size:11px;transition:transform .15s}
+details.tbl[open] summary::before{transform:rotate(90deg)}
+details.tbl summary:hover{color:var(--text-primary)}
+
+/* ---------- tables ---------- */
+.tw{overflow-x:auto;margin:20px 0;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;font-size:14px;min-width:520px}
+th,td{text-align:left;padding:7px 11px;border-bottom:1px solid var(--rule);white-space:nowrap}
+th{font-weight:620;color:var(--text-secondary);font-size:12.5px;letter-spacing:.02em;
+  text-transform:uppercase;position:sticky;top:0;background:var(--surface-1)}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+tbody tr:hover{background:var(--surface-2)}
+td.name{white-space:normal;min-width:200px}
+.rank{color:var(--text-muted);font-variant-numeric:tabular-nums}
+.tabs{display:flex;gap:4px;flex-wrap:wrap;margin:22px 0 0;border-bottom:1px solid var(--rule)}
+.tabs button{border:0;background:none;font:inherit;font-size:14px;color:var(--text-secondary);
+  padding:8px 12px;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+.tabs button[aria-selected=true]{color:var(--text-primary);border-bottom-color:var(--accent);font-weight:620}
+.tabs button:hover{color:var(--text-primary)}
+
+/* ---------- legend ---------- */
+.lgd{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--text-secondary);margin:10px 0 2px}
+.lgd span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:10px;height:10px;border-radius:3px;flex:none}
+
+footer.site{border-top:1px solid var(--rule);margin-top:72px;padding:28px 0 56px;
+  font-size:14px;color:var(--text-muted)}
+@media (max-width:720px){
+  body{font-size:16px}
+  .wrap{padding:0 16px}
+  figure.wide{margin-left:0;width:100%}
+  figure{padding:14px 12px 8px}
+  header.post{padding:36px 0 4px}
+}
+
+
+/* ---------- ramp (ordinal, birth-year classes; oldest = most contrast) ---------- */
+:root{
+  --c0:#0d366b; --c1:#1c5cab; --c2:#2a78d6; --c3:#5598e7; --c4:#86b6ef;
+  --map-bg:#fafaf8; --outline:#8f8e85;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --c0:#b7d3f6; --c1:#6da7ec; --c2:#3987e5; --c3:#256abf; --c4:#184f95;
+    --map-bg:#0e0e0e; --outline:#6b6a64;
+  }
+}
+:root[data-theme="dark"]{
+  --c0:#b7d3f6; --c1:#6da7ec; --c2:#3987e5; --c3:#256abf; --c4:#184f95;
+  --map-bg:#0e0e0e; --outline:#6b6a64;
+}
+
+/* ---------- map ---------- */
+#map{height:660px;border-radius:9px;border:1px solid var(--rule);background:var(--map-bg);z-index:1}
+.seg{display:inline-flex;border:1px solid var(--rule);border-radius:8px;overflow:hidden;background:var(--surface-2)}
+.seg button{border:0;background:none;font:inherit;font-size:13.5px;color:var(--text-secondary);padding:6px 12px;cursor:pointer}
+.seg button+button{border-left:1px solid var(--rule)}
+.seg button[aria-pressed=true]{background:var(--bg);color:var(--text-primary);font-weight:620}
+.ctl input[type=search],.ctl input[type=number]{font:inherit;font-size:13.5px;padding:5px 8px;border:1px solid var(--rule);
+  border-radius:7px;background:var(--surface-2);color:var(--text-primary)}
+.ctl input[type=search]{width:220px}
+.ctl input[type=number]{width:74px;font-variant-numeric:tabular-nums}
+.linkbtn{border:0;background:none;color:var(--accent);font:inherit;font-size:13.5px;cursor:pointer;padding:4px 2px}
+.linkbtn:hover{text-decoration:underline}
+.lgd button{border:1px solid transparent;background:none;font:inherit;font-size:13px;color:var(--text-secondary);
+  display:inline-flex;align-items:center;gap:7px;padding:3px 8px 3px 4px;border-radius:6px;cursor:pointer}
+.lgd button:hover{background:var(--surface-2);color:var(--text-primary)}
+.lgd button[aria-pressed=false]{opacity:.42}
+.lgd button[aria-pressed=false] .sw{background:transparent!important;box-shadow:inset 0 0 0 1.5px var(--text-muted)}
+.lgd .cnt{color:var(--text-muted);font-variant-numeric:tabular-nums}
+.sw.line{width:18px;height:4px;border-radius:2px}
+.status{font-size:13px;color:var(--text-muted);min-height:20px;margin:6px 0 0}
+.leaflet-container{font-family:inherit}
+.leaflet-tooltip,.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:var(--surface-1);color:var(--text-primary);
+  border:1px solid var(--rule);box-shadow:var(--shadow)}
+.leaflet-tooltip{font-size:13px;line-height:1.45;padding:7px 10px;border-radius:7px;max-width:320px;white-space:normal}
+.leaflet-tooltip-top:before{border-top-color:var(--rule)}
+.leaflet-popup-content{font-size:13.5px;line-height:1.5;margin:12px 14px}
+.leaflet-popup-content a{color:var(--accent)}
+.leaflet-container a.leaflet-popup-close-button{color:var(--text-muted)}
+.leaflet-control-attribution{background:color-mix(in srgb,var(--surface-1) 85%,transparent)!important;color:var(--text-muted)!important}
+.leaflet-control-attribution a{color:var(--text-secondary)!important}
+.leaflet-bar a{background:var(--surface-1);color:var(--text-primary);border-bottom-color:var(--rule)}
+.leaflet-bar a:hover{background:var(--surface-2)}
+.tt-muted{color:var(--text-muted)}
+.tt-row{display:flex;align-items:center;gap:6px}
+.tt-row .sw{width:9px;height:9px}
+.chartbox{width:100%}
+figure{scroll-margin-top:72px}
+.searchrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:14px 0 0}
+@media (max-width:720px){ #map{height:500px} .ctl input[type=search]{width:100%} }
+</style>
+</head>
+<body>
+<div class="masthead"><div class="wrap">
+  <span class="brand">dasatomic</span>
+  <nav class="mast-nav">
+    <a href="#mapa">Mapa</a>
+    <a href="#decenije">Decenije</a>
+    <a href="#opstine">Opštine</a>
+    <a href="#licnosti">Ličnosti</a>
+    <a href="#metod">Metod</a>
+    <button class="tbtn" id="themeBtn" type="button" aria-label="Promeni temu">Tamna tema</button>
+  </nav>
+</div></div>
+<div class="wrap">
+<header class="post"><div class="col">
+  <h1>Po kome se zovu beogradske ulice</h1>
+  <p class="dek">Uzeo sam sve imenovane ulice Grada Beograda iz OpenStreetMap-a, izdvojio one koje nose ime istorijske ličnosti i svaku ličnost smestio u vreme po godini rođenja. Kad se to nacrta na mapi, grad izgleda kao presek stabla: najstariji slojevi su u sredini, a mlađi prstenovi idu ka periferiji.</p>
+  <p class="byline"><span>13. septembar 2026.</span><span class="dot">·</span><span>Izvori: <a href="https://www.openstreetmap.org/" target="_blank" rel="noopener">OpenStreetMap</a> i <a href="https://www.wikidata.org/" target="_blank" rel="noopener">Wikidata</a></span><span class="dot">·</span><span>Interaktivno: pređi mišem preko mape i grafika</span></p>
+</div></header>
+
+<div class="col">
+<div class="tiles" id="tiles"></div>
+<p class="lede">Beograd ima <strong>8.793</strong> različita imena ulica. Za <strong id="tNames">…</strong> njih sam uspeo pouzdano da utvrdim da nose ime konkretne osobe koja ima zapis u Wikidati, sa poznatom godinom rođenja. Pošto se ista imena ponavljaju po opštinama (Njegoševa postoji i na Vračaru i u Obrenovcu), osnovna jedinica u analizi je <em>ulica u opštini</em>. Takvih je <strong id="tStreets">…</strong>.</p>
+<p>Ličnosti sam podelio u pet klasa po godini rođenja. Granice nisu zamišljene kao stroga periodizacija, već kao grube generacije koje se u imenima ulica prepoznaju:</p>
+<ul id="classList"></ul>
+</div>
+
+<div class="col">
+<h2 id="mapa"><span class="kicker">Mapa</span>Godine rođenja na mapi Beograda</h2>
+<p>Početni prikaz je <strong>toplotna mapa</strong>. Grad je podeljen na šestougaone ćelije, a boja ćelije je medijana godine rođenja svih ličnosti čije ulice kroz nju prolaze. Tamnija ćelija znači starije ličnosti. Pod <strong>Ulice</strong> je svaka ulica obojena po svojoj ličnosti, pa klik otvara kratku biografiju. Pod <strong>Gustina</strong> se vidi gde su ulice iz izabranog raspona godina najzbijenije.</p>
+</div>
+
+<figure class="wide" id="figMap">
+  <div class="fig-h">
+    <p class="fig-t">Beogradske ulice nazvane po ličnostima, po godini rođenja ličnosti</p>
+    <p class="fig-s" id="mapSub">Filteri važe za sva tri prikaza. Klik na klasu u legendi je uključuje ili isključuje. Brojevi u legendi su ulice.</p>
+  </div>
+  <div class="controls">
+    <div class="seg" role="group" aria-label="Prikaz mape">
+      <button type="button" data-mode="hex" aria-pressed="true">Toplotna mapa</button>
+      <button type="button" data-mode="lines" aria-pressed="false">Ulice</button>
+      <button type="button" data-mode="heat" aria-pressed="false">Gustina</button>
+    </div>
+    <label class="ctl">Rođeni od <input type="number" id="yFrom" step="10" value=""> do <input type="number" id="yTo" step="10" value=""></label>
+    <button type="button" class="linkbtn" id="yReset">sve godine</button>
+    <label class="ctl" id="hexCtl">Ćelija
+      <select id="hexSize"><option value="9">≈ 250 m</option><option value="16" selected>≈ 450 m</option><option value="30">≈ 850 m</option></select>
+    </label>
+    <label class="ctl"><input type="checkbox" id="useAuto" checked> Automatski upareni nazivi</label>
+  </div>
+  <div class="controls">
+    <label class="ctl">Ličnost ili ulica
+      <input type="search" id="q" list="qList" placeholder="npr. Nikola Tesla" autocomplete="off">
+      <datalist id="qList"></datalist>
+    </label>
+    <button type="button" class="linkbtn" id="qClear" hidden>očisti</button>
+  </div>
+  <div class="lgd" id="legend"></div>
+  <div id="map" role="region" aria-label="Interaktivna mapa ulica Beograda"></div>
+  <p class="status" id="status" aria-live="polite"></p>
+  <figcaption>Podloga © Esri, HERE, Garmin, © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> saradnici. Ćelija se prikazuje ako kroz nju prolaze bar dve ulice iz filtera. Tanke sive linije su granice gradskih opština.</figcaption>
+</figure>
+
+<div class="col">
+<h3>Šta se vidi na mapi</h3>
+<p><strong>Centar je najstariji.</strong> U krugu od 2 km od Terazija medijana godine rođenja je <strong>1835</strong>, a više od polovine ličnosti rođeno je pre 1840. godine. Tu su Nemanjina, Cara Dušana, Cara Lazara, Karađorđeva, Kneza Miloša, Dositejeva, Vuka Karadžića, Gospodar Jevremova i Kneginje Ljubice: ulice koje su ime dobile dok je Beograd bio mala varoš i kad se pamtilo ono što je tada bilo „davno“. Između 2 i 4 km medijana skače na <strong>1860</strong>, a od 4 do 10 km na oko <strong>1894</strong>. To je prsten Novog Beograda, Karaburme, Konjarnika, Banovog brda i Kumodraža, gde se ulice uglavnom zovu po učesnicima ratova 1912–1918, Drugog svetskog rata i po naučnicima i umetnicima prve polovine 20. veka.</p>
+<p><strong>Periferija ponovo stari.</strong> Dalje od 10 km medijana je uglavnom između 1873. i 1884, a na više od 30 km od centra čak 1868. Sela i varoši u prigradskim opštinama (Mladenovac, Sopot, Grocka, Surčin) ulice su uglavnom imenovala kasnije, ali su pritom često birala „sigurna“ imena iz nacionalnog kanona: Karađorđa, Hajduk Veljka, Njegoša, Vuka, cara Lazara.</p>
+<p><strong>Sloj 1920-ih.</strong> Najbrojnija decenija rođenja su 1920-e (<span id="n1920">…</span> ličnosti), a odmah za njom 1910-e. To je naraštaj koji je ginuo 1941–1945: <span id="nWW2">…</span> ličnosti sa ulicom umrlo je u tih pet godina. Posle rata su po njima dobijale imena ulice u novim naseljima.</p>
+</div>
+
+<div class="col">
+<h2 id="decenije"><span class="kicker">Klasifikacija</span>Po decenijama rođenja</h2>
+<p>Klik na stubac postavlja filter mape na tu deceniju. Ličnosti rođene pre 1700. godine (antika, srednji vek) nisu na grafiku jer bi razvukle osu na dve i po hiljade godina. Njihov broj je naveden ispod.</p>
+</div>
+<figure class="wide">
+  <div class="fig-h">
+    <p class="fig-t">Broj ličnosti sa ulicom u Beogradu, po deceniji rođenja</p>
+    <p class="fig-s">Jedna ličnost se broji jednom, bez obzira na to koliko ulica nosi njeno ime.</p>
+  </div>
+  <div class="lgd" id="legendHist"></div>
+  <div id="hist" class="chartbox" style="height:380px"></div>
+  <figcaption id="histCap"></figcaption>
+</figure>
+
+<div class="col">
+<h2 id="opstine"><span class="kicker">Geografija</span>Opštine</h2>
+<p>Stari grad je jedina opština u kojoj je većina ličnosti rođena pre 1840. Vračar i Savski venac su opštine 19. veka, sa klasom 1840–1889 kao najvećom. Čukarica, Voždovac, Novi Beograd, Zemun, Palilula i Zvezdara su opštine 20. veka: kod njih je najveća klasa 1890–1929. Klik na opštinu približava mapu na nju.</p>
+</div>
+<figure class="wide">
+  <div class="fig-h">
+    <p class="fig-t">Udeo klasa rođenja među ličnostima po kojima su nazvane ulice, po opštini</p>
+    <p class="fig-s">Opštine su poređane po medijani godine rođenja, od najstarije ka najmlađoj. Ukupno je 100% po redu.</p>
+  </div>
+  <div class="lgd" id="legendMun"></div>
+  <div id="mun" class="chartbox" style="height:560px"></div>
+</figure>
+
+<div class="col">
+<h2 id="licnosti"><span class="kicker">Ko</span>Ličnosti sa najviše ulica</h2>
+<p>Broje se ulice kao i svuda u tekstu, jedna po nazivu u svakoj opštini. Na vrhu je Nikola Tesla sa <strong id="teslaN">18</strong> ulica u <strong id="teslaM">13</strong> od 17 opština, jer se u nekim opštinama javlja više puta: Teslina, Nikole Tesle i Bulevar Nikole Tesle.</p>
+</div>
+<figure class="wide">
+  <div class="fig-h">
+    <p class="fig-t">25 ličnosti sa najviše ulica u Beogradu</p>
+    <p class="fig-s">Boja je klasa rođenja. Klik na stubac pokazuje sve ulice te ličnosti na mapi.</p>
+  </div>
+  <div class="lgd" id="legendTop"></div>
+  <div id="top" class="chartbox" style="height:640px"></div>
+</figure>
+
+<div class="col">
+<h3>Sve ulice</h3>
+<p>Pretraga po imenu ulice, ličnosti ili opštine.</p>
+<div class="searchrow">
+  <label class="ctl"><input type="search" id="tq" placeholder="pretraga…" autocomplete="off"></label>
+  <span class="small" id="tCount"></span>
+</div>
+<div class="tw" style="max-height:520px;overflow:auto">
+  <table>
+    <thead><tr><th>Ulica</th><th>Opština</th><th>Ličnost</th><th class="n">Rođen(a)</th><th class="n">Umro/la</th><th>Izvor</th></tr></thead>
+    <tbody id="tbody"></tbody>
+  </table>
+</div>
+</div>
+
+<div class="col">
+<h2 id="metod"><span class="kicker">Podaci</span>Kako je napravljeno</h2>
+<ol>
+  <li><strong>Ulice.</strong> Preko Overpass API-ja preuzeti su svi putevi (<code>highway=*</code>) sa imenom unutar administrativne granice Grada Beograda: 36.032 segmenta i 8.793 različita imena. Geometrija potiče iz snimka OSM baze od 1. juna 2026. Segmenti istog imena u istoj opštini spojeni su u jednu ulicu, a opština je određena prema sredini segmenta.</li>
+  <li><strong>OSM oznake porekla imena.</strong> Volonteri OpenStreetMap-a za mnoge beogradske ulice unose oznaku <code>name:etymology:wikidata</code>, koja pokazuje na Wikidata stavku osobe po kojoj je ulica nazvana. Takvu oznaku imalo je 3.040 imena. Kad je jedan segment ulice označen, a ostali segmenti istog imena nisu, oznaka je preneta na njih.</li>
+  <li><strong>Automatsko uparivanje.</strong> Za imena bez oznake, naziv je iz genitiva vraćen u moguće nominative (<em>Jovana Skerlića</em> → <em>Jovan Skerlić</em>), uz uklanjanje titula (<em>Vojvode</em>, <em>Doktora</em>, <em>Kneza</em>…). Kandidati su traženi među Wikidata osobama sa člankom na srpskoj Vikipediji. Uparivanje je prihvaćeno samo ako se našla <strong>tačno jedna</strong> osoba sa poznatim datumom smrti, jer se ulice ne imenuju po živim ljudima. Tako je upareno <span id="nAuto">…</span> ulica. U tabeli i na mapi su označene kao „automatski“, a na mapi mogu da se isključe.</li>
+  <li><strong>Godina rođenja</strong> je Wikidata svojstvo P569. Kad je poznat samo vek (svetitelji, srednjovekovni velikaši), uzeta je sredina veka, a godina je u prikazu označena sa „~“.</li>
+  <li><strong>Ručne ispravke.</strong> Izbačene su 22 pogrešne veze. Osam njih vodilo je ka živim ili očigledno pogrešnim osobama: ulica <em>Mike Manojlovića</em> u Surčinu bila je u OSM-u vezana za glumca Mikija Manojlovića. Ostalih 14 otkriveno je automatskim poređenjem naziva ulice sa imenom osobe, uz ručni pregled svih 135 odstupanja. Najveći deo odstupanja bili su legitimni nadimci i pseudonimi (<em>Koče Kapetana</em>, <em>Zmaja od Noćaja</em>, <em>Tomaša Ježa</em>), ali je, na primer, <em>Gramšijeva</em> bila vezana za Konfučija, a <em>Kraljice Marije</em> za Katarinu Kosaču.</li>
+</ol>
+<div class="note"><strong>Ograničenja.</strong> Najveći deo imena koja nisu uključena su toponimi (Ohridska, Bosanska), pojmovi i događaji (Bulevar oslobođenja, 27. marta), ali i mnogo ličnosti bez zapisa u Wikidati: lokalni borci, učitelji i dobrotvori po kojima su nazvane ulice u prigradskim naseljima. Zato je periferija sigurno potcenjena, i to baš za 20. vek. Pridevski oblici (Nemanjina, Skerlićeva) uključeni su samo kad imaju OSM oznaku, jer je automatsko pogađanje za njih previše nepouzdano. I automatsko uparivanje i OSM oznake mogu da promaše osobu sa istim imenom. Takve greške poređenje naziva ne može da otkrije. Ako primetite grešku, najbolje je da je ispravite direktno u OpenStreetMap-u dodavanjem oznake <code>name:etymology:wikidata</code>.</div>
+<p class="small">Podaci: <a href="/assets/ulice/ulice-licnosti.json">ulice-licnosti.json</a> (ulice, ličnosti i geometrija) i <a href="/assets/ulice/opstine.json">opstine.json</a>. Podaci iz OpenStreetMap-a dostupni su pod licencom <a href="https://opendatacommons.org/licenses/odbl/" target="_blank" rel="noopener">ODbL</a>, a podaci iz Wikidate pod CC0.</p>
+</div>
+</div>
+
+<footer class="site"><div class="wrap"><div class="col">
+  <p>dasatomic · <a href="/">Svi tekstovi</a></p>
+</div></div></footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/3.0.1/plotly.min.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  /* ============================================ helpers ================== */
+  var CLS = [
+    { lo: -1e9, hi: 1759, label: "do 1759.", hint: "srednji vek, osmanska i habsburška vlast" },
+    { lo: 1760, hi: 1839, label: "1760–1839.", hint: "ustanici, Kneževina Srbija, Vukov i Njegošev naraštaj" },
+    { lo: 1840, hi: 1889, label: "1840–1889.", hint: "Kraljevina Srbija, vojskovođe ratova 1912–1918, Tesla i Pupin" },
+    { lo: 1890, hi: 1929, label: "1890–1929.", hint: "međuratni i ratni naraštaj, borci 1941–1945" },
+    { lo: 1930, hi: 1e9, label: "1930. i kasnije", hint: "posleratne generacije: glumci, sportisti, žrtve ratova 1990-ih" }
+  ];
+  var SRC = ["OSM oznaka", "OSM, preneto na isto ime", "automatski"];
+  function cls(y) { return y <= 1759 ? 0 : y <= 1839 ? 1 : y <= 1889 ? 2 : y <= 1929 ? 3 : 4; }
+  function css(v) { return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+  function color(k) { return css("--c" + k); }
+  function isDark() {
+    var s = document.documentElement.getAttribute("data-theme");
+    return s ? s === "dark" : window.matchMedia("(prefers-color-scheme: dark)").matches;
+  }
+  function n0(v) { return Math.round(v).toLocaleString("sr-Latn-RS"); }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  function yr(p) {
+    if (p.y == null) return "";
+    var s = p.y < 0 ? (-p.y) + ". p. n. e." : String(p.y);
+    return (p.p < 9 ? "~" : "") + s;
+  }
+  function life(p) { return yr(p) + (p.d != null ? "–" + (p.d < 0 ? (-p.d) + ". p. n. e." : p.d) : ""); }
+  function median(a) {
+    if (!a.length) return NaN;
+    var s = a.slice().sort(function (x, y) { return x - y; }), m = s.length >> 1;
+    return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+  }
+  function norm(s) { return s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/đ/g, "dj"); }
+  function swatch(k, line) { return '<span class="sw' + (line ? " line" : "") + '" style="background:' + color(k) + '"></span>'; }
+
+  var D, P, S, MUN, OUT;
+  var state = { mode: "hex", from: null, to: null, auto: true, on: [true, true, true, true, true], focus: null };
+
+  Promise.all([
+    fetch("/assets/ulice/ulice-licnosti.json").then(function (r) { return r.json(); }),
+    fetch("/assets/ulice/opstine.json").then(function (r) { return r.json(); })
+  ]).then(function (res) {
+    D = res[0]; OUT = res[1]; P = D.persons; MUN = D.mun;
+    S = D.streets.map(function (r, i) {
+      var parts = r[5].map(function (f) {
+        var a = [], la = f[0], lo = f[1];
+        a.push([la / 1e5, lo / 1e5]);
+        for (var j = 2; j < f.length; j += 2) { la += f[j]; lo += f[j + 1]; a.push([la / 1e5, lo / 1e5]); }
+        return a;
+      });
+      var ys = r[2].map(function (q) { return P[q].y; });
+      var y = ys.reduce(function (s, v) { return s + v; }, 0) / ys.length;
+      return { i: i, name: r[0], m: r[1], q: r[2], src: r[3], len: r[4], parts: parts, y: y, k: cls(y),
+        key: norm(r[0] + " " + r[2].map(function (q) { return P[q].n; }).join(" ")) };
+    });
+    init();
+  }).catch(function (e) {
+    document.getElementById("status").textContent = "Podaci nisu učitani: " + e;
+  });
+
+  /* ============================================ filtering ================ */
+  function passes(s) {
+    if (!state.auto && s.src === 2) return false;
+    if (!state.on[s.k]) return false;
+    if (state.focus && state.focus.indexOf(s.i) < 0) return false;
+    if (state.from != null || state.to != null) {
+      var lo = state.from == null ? -1e9 : state.from, hi = state.to == null ? 1e9 : state.to;
+      var any = s.q.some(function (q) { return P[q].y >= lo && P[q].y <= hi; });
+      if (!any) return false;
+    }
+    return true;
+  }
+
+  /* ============================================ init ===================== */
+  var map, tiles, lineLayer, hexLayer, heatLayer, outlineLayer, renderer;
+  function init() {
+    // tiles + text numbers
+    var persons = Object.keys(P);
+    var names = {}; S.forEach(function (s) { names[s.name] = 1; });
+    var ys = persons.map(function (q) { return P[q].y; });
+    var oldest = persons.slice().sort(function (a, b) { return P[a].y - P[b].y; })[0];
+    var km = S.reduce(function (a, s) { return a + s.len; }, 0) / 1000;
+    var tilesEl = document.getElementById("tiles");
+    [[n0(S.length), "ulica sa imenom ličnosti", "ime + opština"],
+     [n0(persons.length), "različitih ličnosti", ""],
+     [String(Math.round(median(ys))), "medijana godine rođenja", ""],
+     [n0(km) + " km", "ukupna dužina tih ulica", ""]].forEach(function (t) {
+      tilesEl.insertAdjacentHTML("beforeend", '<div class="tile"><div class="v">' + t[0] + '</div><div class="k">' + t[1] + '</div>' + (t[2] ? '<div class="s">' + t[2] + "</div>" : "") + "</div>");
+    });
+    document.getElementById("tNames").textContent = n0(Object.keys(names).length);
+    document.getElementById("tStreets").textContent = n0(S.length);
+    document.getElementById("nAuto").textContent = n0(S.filter(function (s) { return s.src === 2; }).length);
+    document.getElementById("n1920").textContent = n0(ys.filter(function (y) { return y >= 1920 && y < 1930; }).length);
+    document.getElementById("nWW2").textContent = n0(persons.filter(function (q) { return P[q].d >= 1941 && P[q].d <= 1945; }).length);
+
+    var perCls = [0, 0, 0, 0, 0]; ys.forEach(function (y) { perCls[cls(y)]++; });
+    var ul = document.getElementById("classList");
+    CLS.forEach(function (c, k) {
+      ul.insertAdjacentHTML("beforeend", "<li><strong>" + c.label + "</strong> " + c.hint + ' <span class="small">(' + n0(perCls[k]) + " ličnosti)</span></li>");
+    });
+
+    // datalist
+    var dl = document.getElementById("qList"), opts = [];
+    var byCount = {}; S.forEach(function (s) { s.q.forEach(function (q) { byCount[q] = (byCount[q] || 0) + 1; }); });
+    persons.sort(function (a, b) { return (byCount[b] - byCount[a]) || (P[b].s - P[a].s); }).forEach(function (q) {
+      opts.push('<option value="' + esc(P[q].n) + '">' + life(P[q]) + "</option>");
+    });
+    dl.innerHTML = opts.join("");
+
+    buildMap();
+    buildLegends();
+    wireControls();
+    buildTable();
+    PLOTS.forEach(function (p) { p(); });
+    refresh();
+  }
+
+  /* ============================================ map ====================== */
+  function buildMap() {
+    renderer = L.canvas({ tolerance: 6, padding: 0.3 });
+    map = L.map("map", { preferCanvas: true, zoomSnap: 0.5, minZoom: 9, maxZoom: 18 }).setView([44.805, 20.46], 12);
+    map.createPane("labels");
+    map.getPane("labels").style.zIndex = 450;
+    map.getPane("labels").style.pointerEvents = "none";
+    setTiles();
+    outlineLayer = L.layerGroup().addTo(map);
+    OUT.forEach(function (o) {
+      L.polygon(o[1], { renderer: renderer, color: css("--outline"), weight: 1, opacity: 0.55, fill: false, interactive: false, dashArray: "3 4" }).addTo(outlineLayer);
+    });
+    lineLayer = L.layerGroup();
+    hexLayer = L.layerGroup();
+    S.forEach(function (s) {
+      s.poly = L.polyline(s.parts, { renderer: renderer, weight: 2.5, opacity: 0.95, color: color(s.k) });
+      s.poly.bindTooltip(function () { return streetTip(s); }, { sticky: true, direction: "top", offset: [0, -8] });
+      s.poly.bindPopup(function () { return streetPopup(s); }, { maxWidth: 320 });
+      s.poly.on("mouseover", function () { s.poly.setStyle({ weight: lineWeight() + 3 }); s.poly.bringToFront(); });
+      s.poly.on("mouseout", function () { s.poly.setStyle({ weight: lineWeight() }); });
+    });
+    map.on("zoomend", function () {
+      if (state.mode === "lines") { var w = lineWeight(); S.forEach(function (s) { if (s.shown) s.poly.setStyle({ weight: w }); }); }
+    });
+  }
+  var labels;
+  function setTiles() {
+    if (tiles) map.removeLayer(tiles);
+    if (labels) map.removeLayer(labels);
+    var base = "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_" + (isDark() ? "Dark" : "Light") + "_Gray_";
+    tiles = L.tileLayer(base + "Base/MapServer/tile/{z}/{y}/{x}", {
+      maxNativeZoom: 16, maxZoom: 18,
+      attribution: 'Podloga &copy; <a href="https://www.esri.com/">Esri</a>, HERE, Garmin, &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    }).addTo(map);
+    labels = L.tileLayer(base + "Reference/MapServer/tile/{z}/{y}/{x}", { maxNativeZoom: 16, maxZoom: 18, pane: "labels" }).addTo(map);
+    tiles.bringToBack();
+  }
+  function lineWeight() { var z = map.getZoom(); return (z <= 11 ? 1.5 : z <= 13 ? 2.5 : z <= 15 ? 3.5 : 5) + (state.focus ? 2 : 0); }
+
+  function personLine(q) {
+    var p = P[q];
+    return '<div class="tt-row">' + swatch(cls(p.y)) + "<span>" + esc(p.n) + ' <span class="tt-muted">' + life(p) + "</span></span></div>";
+  }
+  function streetTip(s) {
+    return "<strong>" + esc(s.name) + "</strong>" + ' <span class="tt-muted">· ' + esc(MUN[s.m] || "") + "</span>" +
+      s.q.map(personLine).join("") +
+      (s.src === 2 ? '<div class="tt-muted">automatski upareno</div>' : "");
+  }
+  function streetPopup(s) {
+    return "<strong>" + esc(s.name) + "</strong> <span class='tt-muted'>· " + esc(MUN[s.m] || "") + "</span>" +
+      s.q.map(function (q) {
+        var p = P[q];
+        return "<p style='margin:8px 0 0'>" + personLine(q) +
+          (p.ds ? "<span class='tt-muted'>" + esc(p.ds) + "</span><br>" : "") +
+          (p.w ? "<a target='_blank' rel='noopener' href='https://sr.wikipedia.org/wiki/" + encodeURIComponent(p.w).replace(/%2F/g, "/") + "'>Vikipedija</a> · " : "") +
+          "<a target='_blank' rel='noopener' href='https://www.wikidata.org/wiki/" + q + "'>Wikidata</a></p>";
+      }).join("") +
+      "<p class='tt-muted' style='margin:8px 0 0'>Izvor veze: " + SRC[s.src] + " · " + n0(s.len) + " m</p>";
+  }
+
+  /* --- hex binning in web-mercator pixel space at a fixed zoom --- */
+  var HZ = 13, hexCache = {};
+  function hexKeysFor(s, r) {
+    var c = hexCache[r] || (hexCache[r] = {});
+    if (c[s.i]) return c[s.i];
+    var keys = {}, w = Math.sqrt(3) * r, step = r * 0.6;
+    s.parts.forEach(function (pt) {
+      var prev = null;
+      pt.forEach(function (ll) {
+        var p = map.project(ll, HZ);
+        if (prev) {
+          var dx = p.x - prev.x, dy = p.y - prev.y, d = Math.sqrt(dx * dx + dy * dy), n = Math.max(1, Math.ceil(d / step));
+          for (var t = 1; t <= n; t++) keys[hexKey(prev.x + dx * t / n, prev.y + dy * t / n, r, w)] = 1;
+        } else keys[hexKey(p.x, p.y, r, w)] = 1;
+        prev = p;
+      });
+    });
+    return (c[s.i] = Object.keys(keys));
+  }
+  function hexKey(x, y, r, w) {
+    // pointy-top axial rounding
+    var q = (x * Math.sqrt(3) / 3 - y / 3) / r, rr = (y * 2 / 3) / r;
+    var cx = q, cz = rr, cy = -cx - cz;
+    var rx = Math.round(cx), ry = Math.round(cy), rz = Math.round(cz);
+    var dx = Math.abs(rx - cx), dy = Math.abs(ry - cy), dz = Math.abs(rz - cz);
+    if (dx > dy && dx > dz) rx = -ry - rz; else if (dy > dz) ry = -rx - rz; else rz = -rx - ry;
+    return rx + "," + rz;
+  }
+  function hexPolygon(key, r) {
+    var a = key.split(","), q = +a[0], rr = +a[1];
+    var cx = r * Math.sqrt(3) * (q + rr / 2), cy = r * 1.5 * rr, pts = [];
+    for (var i = 0; i < 6; i++) {
+      var ang = Math.PI / 180 * (60 * i - 30);
+      pts.push(map.unproject([cx + r * 0.97 * Math.cos(ang), cy + r * 0.97 * Math.sin(ang)], HZ));
+    }
+    return pts;
+  }
+
+  function refresh() {
+    var shown = S.filter(passes);
+    S.forEach(function (s) { s.shown = false; });
+    shown.forEach(function (s) { s.shown = true; });
+    [lineLayer, hexLayer].forEach(function (l) { l.clearLayers(); });
+    if (heatLayer) { map.removeLayer(heatLayer); heatLayer = null; }
+    map.removeLayer(lineLayer); map.removeLayer(hexLayer);
+    document.getElementById("hexCtl").style.display = state.mode === "hex" ? "" : "none";
+
+    if (state.mode === "lines") {
+      var w = lineWeight();
+      shown.sort(function (a, b) { return b.y - a.y; }).forEach(function (s) {
+        s.poly.setStyle({ color: color(s.k), weight: w }); lineLayer.addLayer(s.poly);
+      });
+      lineLayer.addTo(map);
+    } else if (state.mode === "hex") {
+      var r = +document.getElementById("hexSize").value, cells = {};
+      shown.forEach(function (s) {
+        hexKeysFor(s, r).forEach(function (k) {
+          var c = cells[k] || (cells[k] = { ys: [], st: [] });
+          s.q.forEach(function (q) { c.ys.push(P[q].y); });
+          c.st.push(s);
+        });
+      });
+      Object.keys(cells).forEach(function (k) {
+        var c = cells[k]; if (c.st.length < 2) return;
+        var med = median(c.ys), kk = cls(med);
+        var poly = L.polygon(hexPolygon(k, r), { renderer: renderer, stroke: true, color: css("--surface-1"), weight: 1, opacity: 0.6,
+          fillColor: color(kk), fillOpacity: 0.78 });
+        poly.bindTooltip(function () { return hexTip(c, med); }, { sticky: true, direction: "top", offset: [0, -8] });
+        poly.on("mouseover", function () { poly.setStyle({ weight: 2.5, color: css("--text-primary"), opacity: 1 }); poly.bringToFront(); });
+        poly.on("mouseout", function () { poly.setStyle({ weight: 1, color: css("--surface-1"), opacity: 0.6 }); });
+        poly.on("click", function () { map.setView(poly.getBounds().getCenter(), Math.max(map.getZoom(), 15)); setMode("lines"); });
+        hexLayer.addLayer(poly);
+      });
+      hexLayer.addTo(map);
+    } else {
+      var pts = [];
+      shown.forEach(function (s) {
+        s.parts.forEach(function (pt) {
+          for (var i = 1; i < pt.length; i++) {
+            var a = pt[i - 1], b = pt[i], dLat = (b[0] - a[0]) * 111000, dLon = (b[1] - a[1]) * 79000;
+            var n = Math.max(1, Math.round(Math.sqrt(dLat * dLat + dLon * dLon) / 60));
+            for (var t = 0; t < n; t++) pts.push([a[0] + (b[0] - a[0]) * t / n, a[1] + (b[1] - a[1]) * t / n, 1]);
+          }
+        });
+      });
+      var g = isDark() ? { 0.25: "#184f95", 0.5: "#3987e5", 0.75: "#6da7ec", 1: "#cde2fb" }
+                       : { 0.25: "#9ec5f4", 0.5: "#5598e7", 0.75: "#1c5cab", 1: "#0d366b" };
+      heatLayer = L.heatLayer(pts, { radius: 14, blur: 16, minOpacity: 0.25, max: 6, gradient: g }).addTo(map);
+    }
+    outlineLayer.eachLayer(function (l) { l.setStyle({ color: css("--outline") }); });
+    status(shown);
+  }
+  function hexTip(c, med) {
+    var st = c.st.slice().sort(function (a, b) { return a.y - b.y; });
+    var list = st.slice(0, 6).map(function (s) {
+      return '<div class="tt-row">' + swatch(s.k) + "<span>" + esc(s.name) + ' <span class="tt-muted">' + s.q.map(function (q) { return yr(P[q]); }).join(", ") + "</span></span></div>";
+    }).join("");
+    return "<strong>Medijana rođenja: " + Math.round(med) + ".</strong><br><span class='tt-muted'>" + c.st.length + " ulica, od najstarije:</span>" + list +
+      (st.length > 6 ? "<span class='tt-muted'>… i još " + (st.length - 6) + "</span>" : "") +
+      "<div class='tt-muted' style='margin-top:4px'>klik: približi i prikaži ulice</div>";
+  }
+  function status(shown) {
+    var ps = {}; shown.forEach(function (s) { s.q.forEach(function (q) { ps[q] = 1; }); });
+    var ys = Object.keys(ps).map(function (q) { return P[q].y; });
+    document.getElementById("status").textContent = shown.length ?
+      "Prikazano: " + n0(shown.length) + " ulica, " + n0(ys.length) + " ličnosti, medijana rođenja " + Math.round(median(ys)) + "." :
+      "Nijedna ulica ne odgovara filteru.";
+  }
+  function setMode(m) {
+    state.mode = m;
+    Array.prototype.forEach.call(document.querySelectorAll(".seg button"), function (b) { b.setAttribute("aria-pressed", b.dataset.mode === m); });
+    refresh();
+  }
+
+  /* ============================================ controls ================= */
+  function buildLegends() {
+    var counts = [0, 0, 0, 0, 0]; S.forEach(function (s) { counts[s.k]++; });
+    var el = document.getElementById("legend");
+    el.innerHTML = CLS.map(function (c, k) {
+      return '<button type="button" data-k="' + k + '" aria-pressed="' + state.on[k] + '">' + swatch(k) + c.label + ' <span class="cnt">' + n0(counts[k]) + "</span></button>";
+    }).join("");
+    Array.prototype.forEach.call(el.querySelectorAll("button"), function (b) {
+      b.onclick = function () { var k = +b.dataset.k; state.on[k] = !state.on[k]; buildLegends(); refresh(); };
+    });
+    ["legendHist", "legendMun", "legendTop"].forEach(function (id) {
+      document.getElementById(id).innerHTML = CLS.map(function (c, k) { return "<span>" + swatch(k) + c.label + "</span>"; }).join("");
+    });
+  }
+  function wireControls() {
+    Array.prototype.forEach.call(document.querySelectorAll(".seg button"), function (b) { b.onclick = function () { setMode(b.dataset.mode); }; });
+    var yF = document.getElementById("yFrom"), yT = document.getElementById("yTo");
+    function readYears() {
+      state.from = yF.value === "" ? null : +yF.value;
+      state.to = yT.value === "" ? null : +yT.value;
+      refresh();
+    }
+    yF.placeholder = "početak"; yT.placeholder = "danas";
+    yF.onchange = readYears; yT.onchange = readYears;
+    document.getElementById("yReset").onclick = function () { yF.value = ""; yT.value = ""; readYears(); };
+    document.getElementById("hexSize").onchange = refresh;
+    document.getElementById("useAuto").onchange = function (e) { state.auto = e.target.checked; refresh(); };
+    var q = document.getElementById("q"), qc = document.getElementById("qClear");
+    function applyQ() {
+      var v = norm(q.value.trim());
+      qc.hidden = !v;
+      if (!v) { state.focus = null; refresh(); return; }
+      var exact = Object.keys(P).filter(function (k) { return norm(P[k].n) === v; });
+      var hits = exact.length ? S.filter(function (s) { return s.q.some(function (k) { return exact.indexOf(k) >= 0; }); })
+                              : (v.length >= 3 ? S.filter(function (s) { return s.key.indexOf(v) >= 0; }) : []);
+      state.focus = hits.map(function (s) { return s.i; });
+      if (state.mode !== "lines") setMode("lines"); else refresh();
+      if (hits.length) {
+        var b = L.latLngBounds([]); hits.forEach(function (s) { b.extend(s.poly.getBounds()); });
+        map.fitBounds(b, { padding: [40, 40], maxZoom: 16 });
+      }
+    }
+    q.addEventListener("change", applyQ);
+    q.addEventListener("keydown", function (e) { if (e.key === "Enter") applyQ(); });
+    q.addEventListener("search", applyQ);
+    qc.onclick = function () { q.value = ""; applyQ(); };
+    window.__focusPerson = function (name) {
+      q.value = name; applyQ();
+      document.getElementById("figMap").scrollIntoView({ behavior: "smooth", block: "start" });
+    };
+    window.__setRange = function (a, b) {
+      yF.value = a; yT.value = b; readYears();
+      document.getElementById("figMap").scrollIntoView({ behavior: "smooth", block: "start" });
+    };
+    window.__zoomMun = function (mi) {
+      var o = OUT.filter(function (x) { return x[0] === MUN[mi]; })[0];
+      if (o) { map.fitBounds(L.polygon(o[1]).getBounds(), { padding: [20, 20] }); document.getElementById("figMap").scrollIntoView({ behavior: "smooth", block: "start" }); }
+    };
+  }
+
+  /* ============================================ table ==================== */
+  function buildTable() {
+    var rows = [];
+    S.forEach(function (s) { s.q.forEach(function (q) { rows.push({ s: s, q: q }); }); });
+    rows.sort(function (a, b) { return P[a.q].y - P[b.q].y || a.s.name.localeCompare(b.s.name); });
+    var tb = document.getElementById("tbody"), inp = document.getElementById("tq"), cnt = document.getElementById("tCount");
+    function draw() {
+      var v = norm(inp.value.trim());
+      var f = v ? rows.filter(function (r) { return (r.s.key + " " + norm(MUN[r.s.m] || "")).indexOf(v) >= 0; }) : rows;
+      var lim = f.slice(0, 400);
+      tb.innerHTML = lim.map(function (r) {
+        var p = P[r.q];
+        return "<tr><td class='name'>" + esc(r.s.name) + "</td><td>" + esc(MUN[r.s.m] || "–") + "</td><td class='name'>" +
+          '<span class="tt-row">' + swatch(cls(p.y)) + (p.w ? "<a target='_blank' rel='noopener' href='https://sr.wikipedia.org/wiki/" + encodeURIComponent(p.w) + "'>" + esc(p.n) + "</a>" : esc(p.n)) + "</span></td>" +
+          "<td class='n'>" + yr(p) + "</td><td class='n'>" + (p.d != null ? (p.d < 0 ? (-p.d) + ". p. n. e." : p.d) : "") + "</td><td>" + SRC[r.s.src] + "</td></tr>";
+      }).join("");
+      cnt.textContent = n0(f.length) + " redova" + (f.length > 400 ? ", prikazano prvih 400 (poređano po godini rođenja)" : "");
+    }
+    inp.addEventListener("input", draw);
+    draw();
+  }
+
+  /* ============================================ plotly charts ============ */
+  var PLOTS = [];
+  var CONFIG = { displayModeBar: false, responsive: true };
+  function layout(extra) {
+    var base = {
+      paper_bgcolor: "rgba(0,0,0,0)", plot_bgcolor: "rgba(0,0,0,0)",
+      font: { family: '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif', size: 13, color: css("--text-secondary") },
+      hoverlabel: { bgcolor: css("--surface-1"), bordercolor: css("--rule"), font: { color: css("--text-primary"), size: 13 } },
+      xaxis: { gridcolor: css("--grid"), linecolor: css("--rule"), zeroline: false, tickfont: { color: css("--text-muted") } },
+      yaxis: { gridcolor: css("--grid"), linecolor: css("--rule"), zeroline: false, tickfont: { color: css("--text-muted") } },
+      showlegend: false, bargap: 0.12
+    };
+    Object.keys(extra).forEach(function (k) {
+      base[k] = (typeof extra[k] === "object" && base[k] && !Array.isArray(extra[k])) ? Object.assign({}, base[k], extra[k]) : extra[k];
+    });
+    return base;
+  }
+
+  // histogram by decade
+  PLOTS.push(function () {
+    var ids = Object.keys(P), dec = {}, early = 0;
+    ids.forEach(function (q) {
+      var y = P[q].y; if (y < 1700) { early++; return; }
+      var d = Math.floor(y / 10) * 10; (dec[d] = dec[d] || []).push(q);
+    });
+    var xs = []; for (var d = 1700; d <= 1990; d += 10) xs.push(d);
+    var traces = CLS.map(function (c, k) {
+      var sub = xs.filter(function (x) { return cls(x) === k; });
+      return {
+        type: "bar", x: sub.map(function (x) { return x + 5; }), y: sub.map(function (x) { return (dec[x] || []).length; }),
+        customdata: sub, width: 8.4,
+        marker: { color: color(k), line: { width: 0 }, cornerradius: 3 },
+        hovertext: sub.map(function (x) {
+          var ex = (dec[x] || []).slice().sort(function (a, b) { return P[b].s - P[a].s; }).slice(0, 4).map(function (q) { return P[q].n; });
+          return "<b>" + x + "-e</b><br>" + (dec[x] || []).length + " ličnosti" + (ex.length ? "<br>npr. " + ex.join(", ") : "");
+        }),
+        hovertemplate: "%{hovertext}<extra></extra>"
+      };
+    });
+    var el = document.getElementById("hist");
+    Plotly.react(el, traces, layout({
+      barmode: "overlay", margin: { l: 44, r: 12, t: 10, b: 40 },
+      xaxis: { range: [1698, 2002], dtick: 50, showgrid: false, ticklen: 4, ticks: "outside", tickcolor: css("--rule") },
+      yaxis: { title: { text: "ličnosti", font: { color: css("--text-muted"), size: 12 } } }
+    }), CONFIG);
+    if (!el.__wired) {
+      el.on("plotly_click", function (ev) { var d = ev.points[0].customdata; window.__setRange(d, d + 9); });
+      el.__wired = true;
+    }
+    var ex = ids.filter(function (q) { return P[q].y < 1700; }).sort(function (a, b) { return P[a].y - P[b].y; });
+    document.getElementById("histCap").innerHTML = "Pre 1700. rođeno je <strong>" + early + "</strong> ličnosti, od " +
+      ex.slice(0, 4).map(function (q) { return esc(P[q].n) + " (" + yr(P[q]) + ")"; }).join(", ") +
+      " do srednjovekovnih vladara i svetitelja. Najveći broj rođen je 1920-ih.";
+  });
+
+  // municipalities: 100% stacked by class
+  PLOTS.push(function () {
+    var per = {};
+    S.forEach(function (s) {
+      if (s.m < 0) return;
+      var o = per[s.m] || (per[s.m] = { c: [0, 0, 0, 0, 0], ys: [], n: 0 });
+      s.q.forEach(function (q) { o.c[cls(P[q].y)]++; o.ys.push(P[q].y); o.n++; });
+    });
+    var ms = Object.keys(per).map(Number).sort(function (a, b) { return median(per[b].ys) - median(per[a].ys); });
+    var labels = ms.map(function (m) { return MUN[m]; });
+    var traces = CLS.map(function (c, k) {
+      return {
+        type: "bar", orientation: "h", y: labels, customdata: ms,
+        x: ms.map(function (m) { return 100 * per[m].c[k] / per[m].n; }),
+        marker: { color: color(k), line: { color: css("--surface-1"), width: 2 } },
+        hovertext: ms.map(function (m) {
+          return "<b>" + MUN[m] + "</b><br>" + c.label + ": " + per[m].c[k] + " od " + per[m].n + " (" + Math.round(100 * per[m].c[k] / per[m].n) + "%)" +
+            "<br>medijana rođenja: " + Math.round(median(per[m].ys));
+        }),
+        hovertemplate: "%{hovertext}<extra></extra>"
+      };
+    });
+    var el = document.getElementById("mun");
+    Plotly.react(el, traces, layout({
+      barmode: "stack", bargap: 0.28, margin: { l: 104, r: 16, t: 6, b: 40 },
+      xaxis: { range: [0, 100], ticksuffix: "%", dtick: 25 },
+      yaxis: { gridcolor: "rgba(0,0,0,0)", tickfont: { color: css("--text-secondary") }, automargin: true }
+    }), CONFIG);
+    if (!el.__wired) { el.on("plotly_click", function (ev) { window.__zoomMun(ev.points[0].customdata); }); el.__wired = true; }
+  });
+
+  // top persons
+  PLOTS.push(function () {
+    var cnt = {};
+    S.forEach(function (s) { s.q.forEach(function (q) { cnt[q] = (cnt[q] || 0) + 1; }); });
+    var top = Object.keys(cnt).sort(function (a, b) { return cnt[b] - cnt[a] || P[b].s - P[a].s; }).slice(0, 25).reverse();
+    var el = document.getElementById("top");
+    Plotly.react(el, [{
+      type: "bar", orientation: "h", y: top.map(function (q) { return P[q].n; }), x: top.map(function (q) { return cnt[q]; }),
+      customdata: top.map(function (q) { return P[q].n; }),
+      marker: { color: top.map(function (q) { return color(cls(P[q].y)); }), cornerradius: 3 },
+      text: top.map(function (q) { return String(cnt[q]); }), textposition: "outside", cliponaxis: false,
+      textfont: { color: css("--text-secondary"), size: 12 },
+      hovertext: top.map(function (q) {
+        var st = S.filter(function (s) { return s.q.indexOf(q) >= 0; });
+        return "<b>" + P[q].n + "</b> (" + life(P[q]) + ")<br>" + (P[q].ds || "") + "<br>" + cnt[q] + " ulica: " +
+          st.slice(0, 5).map(function (s) { return s.name + " (" + (MUN[s.m] || "") + ")"; }).join(", ") + (st.length > 5 ? "…" : "");
+      }),
+      hovertemplate: "%{hovertext}<extra></extra>"
+    }], layout({
+      margin: { l: 190, r: 30, t: 6, b: 36 }, bargap: 0.3,
+      xaxis: { title: { text: "broj ulica (ime + opština)", font: { color: css("--text-muted"), size: 12 } } },
+      yaxis: { gridcolor: "rgba(0,0,0,0)", tickfont: { color: css("--text-secondary") }, automargin: true }
+    }), CONFIG);
+    if (!el.__wired) { el.on("plotly_click", function (ev) { window.__focusPerson(ev.points[0].customdata); }); el.__wired = true; }
+  });
+
+  /* ============================================ theme ==================== */
+  (function () {
+    var btn = document.getElementById("themeBtn");
+    var mq = window.matchMedia("(prefers-color-scheme: dark)");
+    function sync() {
+      btn.textContent = isDark() ? "Svetla tema" : "Tamna tema";
+      if (!S) return;
+      setTiles(); buildLegends(); refresh();
+      PLOTS.forEach(function (p) { p(); });
+      document.getElementById("tq").dispatchEvent(new Event("input"));
+    }
+    btn.addEventListener("click", function () {
+      document.documentElement.setAttribute("data-theme", isDark() ? "light" : "dark");
+      sync();
+    });
+    mq.addEventListener("change", sync);
+    btn.textContent = isDark() ? "Svetla tema" : "Tamna tema";
+  })();
+})();
+</script>
+</body>
+</html>
