@@ -1,0 +1,909 @@
+---
+layout: null
+title:  "Po kome se zovu ulice evropskih prestonica"
+date:   2026-09-13 09:30:00 +0100
+categories: DataScience
+excerpt: "Beograd, Zagreb, Ljubljana, Budimpešta, Beč, Berlin, Prag, Varšava, Pariz, Brisel, Stokholm, Kopenhagen, Madrid, Lisabon i Dablin: 16.129 ulica nazvanih po ličnostima, godine rođenja, udeo žena i evropske ličnosti koje imaju ulicu u najviše gradova."
+---
+<!doctype html>
+<html lang="sr-Latn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Po kome se zovu ulice evropskih prestonica — uporedna analiza 15 gradova</title>
+<meta name="description" content="Uporedna analiza ulica nazvanih po istorijskim ličnostima u 15 evropskih gradova: godine rođenja, udeo žena, centar i periferija, interaktivne mape.">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<style>
+
+/* ---------- tokens ---------- */
+:root{
+  color-scheme: light;
+  --bg:#ffffff; --surface-1:#fcfcfb; --surface-2:#f6f5f2;
+  --text-primary:#0b0b0b; --text-secondary:#52514e; --text-muted:#7c7a74;
+  --rule:#e6e4de; --grid:#eeece7;
+  --series-1:#2a78d6; --series-2:#eb6834; --series-3:#1baf7a;
+  --pos:#2a78d6; --neg:#e34948; --mid:#f0efec;
+  --mark-mute:#cbc9c2; --accent:#2a78d6;
+  --shadow:0 1px 2px rgba(0,0,0,.04),0 8px 24px -16px rgba(0,0,0,.18);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --bg:#141413; --surface-1:#1a1a19; --surface-2:#212120;
+    --text-primary:#ffffff; --text-secondary:#c3c2b7; --text-muted:#8f8e85;
+    --rule:#33332f; --grid:#2a2a28;
+    --series-1:#3987e5; --series-2:#d95926; --series-3:#199e70;
+    --pos:#3987e5; --neg:#e66767; --mid:#383835;
+    --mark-mute:#4a4a45; --accent:#3987e5;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px -16px rgba(0,0,0,.6);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --bg:#141413; --surface-1:#1a1a19; --surface-2:#212120;
+  --text-primary:#ffffff; --text-secondary:#c3c2b7; --text-muted:#8f8e85;
+  --rule:#33332f; --grid:#2a2a28;
+  --series-1:#3987e5; --series-2:#d95926; --series-3:#199e70;
+  --pos:#3987e5; --neg:#e66767; --mid:#383835;
+  --mark-mute:#4a4a45; --accent:#3987e5;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px -16px rgba(0,0,0,.6);
+}
+
+/* ---------- base ---------- */
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--bg); color:var(--text-primary);
+  font:400 17px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif;
+  font-feature-settings:"tnum" 0;
+}
+.wrap{max-width:1180px;margin:0 auto;padding:0 24px}
+.col{max-width:760px;margin:0 auto}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+
+/* ---------- masthead ---------- */
+.masthead{border-bottom:1px solid var(--rule);position:sticky;top:0;background:var(--bg);z-index:50}
+.masthead .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px;height:56px}
+.brand{font-weight:650;letter-spacing:-.01em;font-size:17px;color:var(--text-primary)}
+.mast-nav{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.mast-nav a{font-size:13.5px;color:var(--text-secondary);padding:5px 9px;border-radius:6px}
+.mast-nav a:hover{background:var(--surface-2);text-decoration:none;color:var(--text-primary)}
+.tbtn{border:1px solid var(--rule);background:var(--surface-1);color:var(--text-secondary);
+  border-radius:7px;padding:5px 10px;font-size:13px;cursor:pointer;font-family:inherit}
+.tbtn:hover{color:var(--text-primary);border-color:var(--text-muted)}
+
+/* ---------- post header ---------- */
+header.post{padding:56px 0 8px}
+h1{font-size:clamp(30px,4.6vw,44px);line-height:1.12;letter-spacing:-.022em;margin:0 0 14px;font-weight:680}
+.dek{font-size:19px;color:var(--text-secondary);margin:0 0 18px;line-height:1.55}
+.byline{font-size:14px;color:var(--text-muted);display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.byline .dot{opacity:.5}
+
+/* ---------- text ---------- */
+h2{font-size:27px;line-height:1.22;letter-spacing:-.016em;margin:64px 0 6px;font-weight:660;scroll-margin-top:72px}
+h2 .kicker{display:block;font-size:12.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--text-muted);font-weight:600;margin-bottom:9px}
+h3{font-size:19.5px;line-height:1.3;letter-spacing:-.01em;margin:44px 0 4px;font-weight:640;scroll-margin-top:72px}
+p{margin:14px 0}
+.lede{font-size:18.5px;color:var(--text-secondary)}
+small,.small{font-size:14px;color:var(--text-muted);line-height:1.55}
+ul,ol{padding-left:22px;margin:14px 0}
+li{margin:7px 0}
+strong{font-weight:640}
+hr{border:0;border-top:1px solid var(--rule);margin:56px 0}
+code{font:500 14px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--surface-2);
+  padding:2px 5px;border-radius:4px;color:var(--text-secondary)}
+.note{background:var(--surface-1);border:1px solid var(--rule);border-left:3px solid var(--accent);
+  border-radius:0 8px 8px 0;padding:14px 18px;margin:22px 0;font-size:15.5px;color:var(--text-secondary)}
+.note strong{color:var(--text-primary)}
+
+/* ---------- stat tiles ---------- */
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:24px 0}
+.tile{background:var(--surface-1);border:1px solid var(--rule);border-radius:10px;padding:14px 16px}
+.tile .v{font-size:29px;line-height:1.05;font-weight:640;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.tile .k{font-size:13px;color:var(--text-secondary);margin-top:5px;line-height:1.35}
+.tile .s{font-size:12.5px;color:var(--text-muted);margin-top:3px}
+
+/* ---------- figures ---------- */
+figure{margin:26px 0 0;background:var(--surface-1);border:1px solid var(--rule);border-radius:12px;
+  padding:18px 18px 10px;box-shadow:var(--shadow)}
+figure.wide{max-width:1180px;margin-left:calc(50% - min(590px,50vw - 24px));width:min(1132px,100vw - 48px)}
+.fig-h{margin-bottom:2px}
+.fig-t{font-size:16.5px;font-weight:640;letter-spacing:-.008em;margin:0}
+.fig-s{font-size:14px;color:var(--text-secondary);margin:5px 0 0;line-height:1.5}
+.controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:14px 0 4px}
+.ctl{display:flex;align-items:center;gap:7px;font-size:13.5px;color:var(--text-secondary)}
+.ctl select,.ctl input[type=range]{font-family:inherit}
+.ctl select{font-size:13.5px;padding:5px 8px;border:1px solid var(--rule);border-radius:7px;
+  background:var(--surface-2);color:var(--text-primary);max-width:260px}
+.ctl input[type=range]{accent-color:var(--accent);width:130px}
+.ctl output{font-variant-numeric:tabular-nums;color:var(--text-primary);font-weight:600;min-width:22px}
+.plot{width:100%}
+figcaption{font-size:13px;color:var(--text-muted);margin-top:8px;line-height:1.5;padding-bottom:6px}
+details.tbl{margin-top:6px;border-top:1px solid var(--rule);padding-top:8px}
+details.tbl summary{font-size:13px;color:var(--text-secondary);cursor:pointer;list-style:none;
+  display:inline-flex;align-items:center;gap:6px;padding:3px 0}
+details.tbl summary::-webkit-details-marker{display:none}
+details.tbl summary::before{content:"▸";font-size:11px;transition:transform .15s}
+details.tbl[open] summary::before{transform:rotate(90deg)}
+details.tbl summary:hover{color:var(--text-primary)}
+
+/* ---------- tables ---------- */
+.tw{overflow-x:auto;margin:20px 0;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;font-size:14px;min-width:520px}
+th,td{text-align:left;padding:7px 11px;border-bottom:1px solid var(--rule);white-space:nowrap}
+th{font-weight:620;color:var(--text-secondary);font-size:12.5px;letter-spacing:.02em;
+  text-transform:uppercase;position:sticky;top:0;background:var(--surface-1)}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+tbody tr:hover{background:var(--surface-2)}
+td.name{white-space:normal;min-width:200px}
+.rank{color:var(--text-muted);font-variant-numeric:tabular-nums}
+.tabs{display:flex;gap:4px;flex-wrap:wrap;margin:22px 0 0;border-bottom:1px solid var(--rule)}
+.tabs button{border:0;background:none;font:inherit;font-size:14px;color:var(--text-secondary);
+  padding:8px 12px;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+.tabs button[aria-selected=true]{color:var(--text-primary);border-bottom-color:var(--accent);font-weight:620}
+.tabs button:hover{color:var(--text-primary)}
+
+/* ---------- legend ---------- */
+.lgd{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--text-secondary);margin:10px 0 2px}
+.lgd span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:10px;height:10px;border-radius:3px;flex:none}
+
+footer.site{border-top:1px solid var(--rule);margin-top:72px;padding:28px 0 56px;
+  font-size:14px;color:var(--text-muted)}
+@media (max-width:720px){
+  body{font-size:16px}
+  .wrap{padding:0 16px}
+  figure.wide{margin-left:0;width:100%}
+  figure{padding:14px 12px 8px}
+  header.post{padding:36px 0 4px}
+}
+
+/* ---------- birth-year classes: five distinct hues, validated all-pairs (CVD + normal vision) per mode ---------- */
+:root{
+  --c0:#4834c4; --c1:#db327b; --c2:#bb9b39; --c3:#3e6102; --c4:#659dfb;
+  --g-m:#2a78d6; --g-f:#eb6834;
+  --s0:#2a78d6; --s1:#f3b08f; --s2:#eb6834; --s3:#a8401a;
+  --map-bg:#fafaf8; --outline:#8f8e85;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --c0:#8843db; --c1:#e63890; --c2:#8d631b; --c3:#42a926; --c4:#3198d6;
+    --g-m:#3987e5; --g-f:#d95926;
+    --s0:#3987e5; --s1:#8a4323; --s2:#d95926; --s3:#f59a73;
+    --map-bg:#0e0e0e; --outline:#6b6a64;
+  }
+}
+:root[data-theme="dark"]{
+  --c0:#8843db; --c1:#e63890; --c2:#8d631b; --c3:#42a926; --c4:#3198d6;
+  --g-m:#3987e5; --g-f:#d95926;
+  --s0:#3987e5; --s1:#8a4323; --s2:#d95926; --s3:#f59a73;
+  --map-bg:#0e0e0e; --outline:#6b6a64;
+}
+.lgd[hidden]{display:none}
+.lgd .lgd-h{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);margin-right:2px}
+
+/* ---------- map ---------- */
+#map{height:660px;border-radius:9px;border:1px solid var(--rule);background:var(--map-bg);z-index:1}
+.seg{display:inline-flex;border:1px solid var(--rule);border-radius:8px;overflow:hidden;background:var(--surface-2)}
+.seg button{border:0;background:none;font:inherit;font-size:13.5px;color:var(--text-secondary);padding:6px 12px;cursor:pointer}
+.seg button+button{border-left:1px solid var(--rule)}
+.seg button[aria-pressed=true]{background:var(--bg);color:var(--text-primary);font-weight:620}
+.ctl input[type=search],.ctl input[type=number]{font:inherit;font-size:13.5px;padding:5px 8px;border:1px solid var(--rule);
+  border-radius:7px;background:var(--surface-2);color:var(--text-primary)}
+.ctl input[type=search]{width:220px}
+.ctl input[type=number]{width:74px;font-variant-numeric:tabular-nums}
+.linkbtn{border:0;background:none;color:var(--accent);font:inherit;font-size:13.5px;cursor:pointer;padding:4px 2px}
+.linkbtn:hover{text-decoration:underline}
+.lgd button{border:1px solid transparent;background:none;font:inherit;font-size:13px;color:var(--text-secondary);
+  display:inline-flex;align-items:center;gap:7px;padding:3px 8px 3px 4px;border-radius:6px;cursor:pointer}
+.lgd button:hover{background:var(--surface-2);color:var(--text-primary)}
+.lgd button[aria-pressed=false]{opacity:.42}
+.lgd button[aria-pressed=false] .sw{background:transparent!important;box-shadow:inset 0 0 0 1.5px var(--text-muted)}
+.lgd .cnt{color:var(--text-muted);font-variant-numeric:tabular-nums}
+.sw.line{width:18px;height:4px;border-radius:2px}
+.status{font-size:13px;color:var(--text-muted);min-height:20px;margin:6px 0 0}
+.leaflet-container{font-family:inherit}
+.leaflet-tooltip,.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:var(--surface-1);color:var(--text-primary);
+  border:1px solid var(--rule);box-shadow:var(--shadow)}
+.leaflet-tooltip{font-size:13px;line-height:1.45;padding:7px 10px;border-radius:7px;max-width:320px;white-space:normal}
+.leaflet-tooltip-top:before{border-top-color:var(--rule)}
+.leaflet-popup-content{font-size:13.5px;line-height:1.5;margin:12px 14px}
+.leaflet-popup-content a{color:var(--accent)}
+.leaflet-container a.leaflet-popup-close-button{color:var(--text-muted)}
+.leaflet-control-attribution{background:color-mix(in srgb,var(--surface-1) 85%,transparent)!important;color:var(--text-muted)!important}
+.leaflet-control-attribution a{color:var(--text-secondary)!important}
+.leaflet-bar a{background:var(--surface-1);color:var(--text-primary);border-bottom-color:var(--rule)}
+.leaflet-bar a:hover{background:var(--surface-2)}
+.tt-muted{color:var(--text-muted)}
+.tt-row{display:flex;align-items:center;gap:6px}
+.tt-row .sw{width:9px;height:9px}
+.chartbox{width:100%}
+figure{scroll-margin-top:72px}
+.searchrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:14px 0 0}
+@media (max-width:720px){ #map{height:500px} .ctl input[type=search]{width:100%} }
+
+#map{height:640px;border-radius:9px;border:1px solid var(--rule);background:var(--map-bg);z-index:1}
+.seg{display:inline-flex;border:1px solid var(--rule);border-radius:8px;overflow:hidden;background:var(--surface-2)}
+.seg button{border:0;background:none;font:inherit;font-size:13.5px;color:var(--text-secondary);padding:6px 12px;cursor:pointer}
+.seg button+button{border-left:1px solid var(--rule)}
+.seg button[aria-pressed=true]{background:var(--bg);color:var(--text-primary);font-weight:620}
+.status{font-size:13px;color:var(--text-muted);min-height:20px;margin:6px 0 0}
+.leaflet-container{font-family:inherit}
+.leaflet-tooltip,.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:var(--surface-1);color:var(--text-primary);border:1px solid var(--rule);box-shadow:var(--shadow)}
+.leaflet-tooltip{font-size:13px;line-height:1.45;padding:7px 10px;border-radius:7px;max-width:320px;white-space:normal}
+.leaflet-popup-content{font-size:13.5px;line-height:1.5;margin:12px 14px}
+.leaflet-popup-content a{color:var(--accent)}
+.leaflet-control-attribution{background:color-mix(in srgb,var(--surface-1) 85%,transparent)!important;color:var(--text-muted)!important}
+.leaflet-control-attribution a{color:var(--text-secondary)!important}
+.leaflet-bar a{background:var(--surface-1);color:var(--text-primary);border-bottom-color:var(--rule)}
+.tt-muted{color:var(--text-muted)}
+.tt-row{display:flex;align-items:center;gap:6px}
+.tt-row .sw{width:9px;height:9px}
+.chartbox{width:100%}
+figure{scroll-margin-top:72px}
+.clslist{list-style:none;padding-left:0}
+.clslist li{display:flex;align-items:center;gap:8px}
+.clslist .sw{width:12px;height:12px}
+@media (max-width:720px){ #map{height:480px} }
+
+</style>
+</head>
+<body>
+<div class="masthead"><div class="wrap">
+  <a class="brand" href="/">dasatomic</a>
+  <nav class="mast-nav">
+    <a href="#podaci">Podaci</a>
+    <a href="#vreme">Vreme</a>
+    <a href="#zene">Žene</a>
+    <a href="#centar">Centar</a>
+    <a href="#licnosti">Ličnosti</a>
+    <a href="#mapa">Mapa</a>
+    <a href="#metod">Metod</a>
+    <button class="tbtn" id="themeBtn" type="button" aria-label="Promeni temu">Tamna tema</button>
+  </nav>
+</div></div>
+<div class="wrap">
+<header class="post"><div class="col">
+  <h1>Po kome se zovu ulice evropskih prestonica</h1>
+  <p class="dek">Isto pitanje kao u tekstu o Beogradu, sada za petnaest evropskih prestonica: po kome se zovu ulice, kada su te ličnosti rođene i koliko je među njima žena. Istočne i jugoistočne prestonice slave 19. i 20. vek, Pariz i Kopenhagen stariji svet, a gotovo svaka ulica slavi nekog svog: manje od 5% ličnosti ima ulicu u više od jednog grada.</p>
+  <p class="byline"><span>13. septembar 2026.</span><span class="dot">·</span><span>Izvori: <a href="https://www.openstreetmap.org/" target="_blank" rel="noopener">OpenStreetMap</a> i <a href="https://www.wikidata.org/" target="_blank" rel="noopener">Wikidata</a></span><span class="dot">·</span><span>Nastavak teksta <a href="/datascience/2026/09/13/ulice-beograda-licnosti.html">Po kome se zovu beogradske ulice</a></span></p>
+</div></header>
+
+<div class="col">
+<div class="tiles" id="tiles"></div>
+<p class="lede">Za petnaest gradova preuzeo sam sve imenovane ulice iz OpenStreetMap-a i za svaku potražio osobu po kojoj nosi ime, sa godinom rođenja i polom iz Wikidate. Ukupno je pronađeno <strong>16.129</strong> ulica nazvanih po <strong>14.002</strong> ličnosti.</p>
+<p>Metod je isti za sve gradove, i to ima cenu. U tekstu o Beogradu imena ulica sam pogađao i iz srpskog genitiva (<em>Jovana Skerlića</em> → <em>Jovan Skerlić</em>), ali takav trik ne može pošteno da se primeni na mađarski, švedski i portugalski. Ovde se zato koriste samo izvori koji postoje za svaki grad. Beograd je, pored toga, sveden na uže gradsko područje, bez sela Grada Beograda. Beogradski brojevi zato nisu isti kao u prethodnom tekstu (1.764 ulice umesto 4.038), ali su poredivi sa ostalim gradovima.</p>
+<p>Ličnosti su podeljene u pet klasa po godini rođenja. Granice su drugačije nego u tekstu o Beogradu, jer moraju da imaju smisla za petnaest različitih nacionalnih istorija:</p>
+<ul id="classList" class="clslist"></ul>
+</div>
+
+<div class="col">
+<h2 id="podaci"><span class="kicker">Pre svega</span>Koliko su podaci potpuni</h2>
+<p>Pre bilo kakvog poređenja treba reći koliko se o kom gradu uopšte zna. Da li je ulica nazvana po osobi, mestu ili događaju upisuju volonteri OpenStreetMap-a i Wikidate, a taj posao je u nekim gradovima skoro završen, dok u drugim nije ni počeo. U Berlinu se poreklo imena zna za <strong>87%</strong> imenovanih ulica, u Kopenhagenu za 75%, u Beogradu i Parizu za dve trećine. U Stokholmu je taj udeo 6%, a u Dablinu <strong>0,3%</strong>: tamo je pronađeno ukupno 15 ulica nazvanih po ličnosti, što nije dovoljno ni za kakav zaključak.</p>
+<p>Zbog toga ovaj tekst <strong>ne poredi koliko ulica</strong> u kom gradu nosi ime ličnosti. Podatak da je u Parizu takvih 46% imenovanih ulica, a u Madridu 7%, više govori o volonterima nego o gradovima. Porede se samo <strong>sastav i raspored</strong>: kada su ličnosti rođene, koliko je žena, kako se to menja od centra ka periferiji. I to treba čitati sa rezervom za gradove sa pokrivenošću ispod 25%, jer nije sigurno da je poznati deo ulica reprezentativan. Ti gradovi su u svim graficima sivi i označeni zvezdicom.</p>
+</div>
+<figure class="wide">
+  <div class="fig-h">
+    <p class="fig-t">Udeo imenovanih ulica za koje se zna po čemu su dobile ime</p>
+    <p class="fig-s">Bilo kakva veza ka poreklu imena: ličnost, mesto, događaj ili pojam. Isprekidana linija je granica od <span class="lowN">25</span>%. Gradovi ispod nje su sivi i označeni zvezdicom u svim graficima.</p>
+  </div>
+  <div id="coverage" class="chartbox" style="height:480px"></div>
+</figure>
+
+<div class="col">
+<h2 id="vreme"><span class="kicker">Vreme</span>Koji vek slavi koji grad</h2>
+<p><strong>Beograd je najmlađi.</strong> Medijana godine rođenja ličnosti po kojima su nazvane beogradske ulice je <strong>1885</strong>, a 39% tih ličnosti rođeno je 1900. ili kasnije, više nego u bilo kom drugom gradu. Odmah iza su <strong>Prag (1879)</strong>, <strong>Varšava (1873)</strong> i <strong>Ljubljana (1862)</strong>. Na drugom kraju, među gradovima sa dobrom pokrivenošću, su <strong>Kopenhagen (1818)</strong> i <strong>Pariz (1824)</strong>. U oba grada čak 39% ličnosti rođeno je pre 1800. godine, a u Beogradu 16%. Berlin (1843) i Brisel (1851) su u sredini.</p>
+<p>Obrazac je prilično jasan: srednjoevropske i jugoistočne prestonice slave ljude druge polovine 19. i prve polovine 20. veka, a zapadne i severne i stariji svet. Moguće objašnjenje je istorija samih država i imena ulica. Srbija, Češka, Poljska i Slovenija su svoje moderne države i nacionalne panteone gradile upravo u 19. i 20. veku, a ulice su tokom 20. veka menjale imena posle 1918, 1945. i 1990. Svaki takav talas daje prednost ličnostima bliskim tom vremenu. Pariz i Kopenhagen imaju duži kontinuitet i više slojeva starih imena. Podaci ovo, naravno, ne dokazuju, već samo pokazuju razliku.</p>
+<p>Od gradova sa niskom pokrivenošću, Stokholm (1801), Budimpešta (1822) i Madrid (1827) izgledaju „stari“, a Lisabon (1855) i Zagreb (1850) su bliži sredini. Kod njih je poznati deo ulica mali, pa bi potpuni podaci mogli da pomere sliku.</p>
+</div>
+<figure class="wide">
+  <div class="fig-h">
+    <p class="fig-t">Medijana godine rođenja ličnosti po kojima su nazvane ulice</p>
+    <p class="fig-s">Tačka je medijana, a siva traka srednja polovina svih veza ulica–ličnost (od 25. do 75. percentila). Prazna tačka: grad sa niskom pokrivenošću podacima. Klik otvara grad na mapi.</p>
+  </div>
+  <div id="median" class="chartbox" style="height:500px"></div>
+</figure>
+<figure class="wide">
+  <div class="fig-h">
+    <p class="fig-t">Udeo klasa rođenja, po gradu</p>
+    <p class="fig-s">Gradovi su poređani kao na prethodnom grafiku, po medijani. Ukupno je 100% po redu.</p>
+  </div>
+  <div class="lgd" id="lgdClasses"></div>
+  <div id="classes" class="chartbox" style="height:500px"></div>
+</figure>
+<figure class="wide">
+  <div class="fig-h">
+    <p class="fig-t">Raspodela godina rođenja jednog grada naspram svih 15 gradova</p>
+    <p class="fig-s">Stupci su udeo ličnosti izabranog grada po deceniji rođenja (1500–1999), a linija isti udeo za svih 15 gradova zajedno.</p>
+  </div>
+  <div class="controls"><label class="ctl">Grad <select id="histCity"></select></label></div>
+  <div class="lgd" id="lgdHist"></div>
+  <div id="hist" class="chartbox" style="height:380px"></div>
+  <figcaption id="histCap"></figcaption>
+</figure>
+
+<div class="col">
+<h2 id="zene"><span class="kicker">Pol</span>Koliko je žena</h2>
+<p>U svih 15 gradova zajedno žene su <strong>11,2%</strong> ličnosti po kojima su nazvane ulice. Nijedan grad ne prelazi četvrtinu. Među gradovima sa dobrom pokrivenošću najviše žena ima <strong>Kopenhagen (14,1%)</strong>, a slede Berlin (11,7%) i Beograd (10,9%). Najmanje ih je u <strong>Ljubljani (6,2%)</strong> i Pragu (7,8%).</p>
+<p>Najveći udeo imaju <strong>Stokholm (22,4%)</strong> i <strong>Beč (18,8%)</strong>, ali su oba grada sa niskom pokrivenošću, pa se ne može isključiti da je poznati deo ulica pristrasan. Za Beč postoji i razlog da broj bude stvaran: grad već godinama nove ulice svesno imenuje po ženama, a u novom naselju Seestadt Aspern sve ulice nose ženska imena. Kada se u Wikidati obrađuju upravo nove ulice, one lako mogu da budu natprosečno zastupljene.</p>
+</div>
+<figure class="wide">
+  <div class="fig-h">
+    <p class="fig-t">Udeo žena među ličnostima po kojima su nazvane ulice</p>
+    <p class="fig-s">Računato po vezama ulica–ličnost, samo za osobe kojima je pol poznat u Wikidati. Isprekidana linija je prosek svih 15 gradova.</p>
+  </div>
+  <div id="women" class="chartbox" style="height:480px"></div>
+</figure>
+
+<div class="col">
+<h2 id="centar"><span class="kicker">Prostor</span>Centar i periferija</h2>
+<p>U tekstu o Beogradu centar je bio najstariji. Isto važi za skoro sve gradove, a razlike su često veće nego u Beogradu. U <strong>Parizu</strong> je medijana u krugu od 2 km od centra <strong>1769</strong>, a na 5–10 km <strong>1840</strong>. <strong>Kopenhagen</strong> ide od 1744 u centru do 1878, <strong>Brisel</strong> od 1807 do 1877, <strong>Berlin</strong> od 1816 do 1853, a <strong>Prag</strong> od 1832 do 1891. <strong>Beograd</strong> ide od 1841 do 1899, pa mu je i centar mlađi od većine drugih centara.</p>
+<p>Jedini veliki izuzetak je <strong>Varšava</strong>: medijana je praktično ista u svim prstenovima, od 1861. do 1878. Jedno moguće objašnjenje je da je centar Varšave posle razaranja 1944. obnovljen i da su njegove ulice imenovane iznova, u isto vreme kada i nova naselja. Ravna linija ima i Budimpešta, ali tamo je pokrivenost podacima premala da bi se išta zaključilo.</p>
+</div>
+<figure class="wide">
+  <div class="fig-h">
+    <p class="fig-t">Medijana godine rođenja po udaljenosti od centra grada</p>
+    <p class="fig-s">Četiri prstena: do 2 km, 2–5 km, 5–10 km i preko 10 km od glavnog trga. Prsten sa manje od 20 veza ulica–ličnost je izostavljen. Svi gradovi imaju istu vertikalnu osu.</p>
+  </div>
+  <div id="rings" class="chartbox" style="height:560px"></div>
+</figure>
+
+<div class="col">
+<h2 id="licnosti"><span class="kicker">Ko</span>Evropske ličnosti i domaći junaci</h2>
+<p><strong>Ulice su nacionalne.</strong> Od 14.002 ličnosti, njih 13.395 (96%) ima ulicu u samo jednom od 15 gradova. Evropski zajednički panteon je mali, i nisu ga napravili političari: jedina ličnost sa ulicom u 9 gradova je <strong>Volfgang Amadeus Mocart</strong> (sve osim Zagreba, Ljubljane, Budimpešte, Stokholma, Lisabona i Dablina). Po 8 gradova imaju Nikola Kopernik, Ludvig van Betoven, Galileo Galilej i Lav Tolstoj, a po 7 Čarls Darvin, Tomas Edison, Luj Paster, Kristifor Kolumbo i Karl Line.</p>
+<p>Na tom spisku preovlađuju naučnici, kompozitori i pisci. Političara je malo: Džordž Vašington i Džon Kenedi imaju ulice u po 6 gradova, a Vudro Vilson, Vinston Čerčil, Šarl de Gol i Mahatma Gandi u po 5. Među ličnostima sa ulicom u bar četiri grada je samo jedna žena: <strong>Marija Kiri</strong>, sa ulicama u šest gradova.</p>
+</div>
+<figure class="wide">
+  <div class="fig-h">
+    <p class="fig-t">Ličnosti sa ulicom u najviše gradova</p>
+    <p class="fig-s">Broj gradova, od 15, u kojima ličnost ima bar jednu ulicu. Boja je klasa rođenja. Pređi mišem da vidiš spisak gradova.</p>
+  </div>
+  <div id="shared" class="chartbox" style="height:720px"></div>
+</figure>
+<figure class="wide">
+  <div class="fig-h">
+    <p class="fig-t">Ličnosti sa najviše ulica u jednom gradu</p>
+    <p class="fig-s">U većini gradova jedno ime ulice postoji samo jednom, pa se ovde vide tek oni koji imaju više različito nazvanih ulica ili istoimene ulice u raznim delovima grada.</p>
+  </div>
+  <div class="controls"><label class="ctl">Grad <select id="topCity"></select></label></div>
+  <div id="cityTop" class="chartbox" style="height:440px"></div>
+</figure>
+
+<div class="col">
+<h2 id="mapa"><span class="kicker">Mapa</span>Svaki grad na mapi</h2>
+<p>Isti prikaz kao u tekstu o Beogradu, sada za svaki od 15 gradova. <strong>Toplotna mapa</strong> boji šestougaone ćelije po medijani godine rođenja ili po udelu žena, a <strong>Ulice</strong> prikazuju svaku ulicu posebno. Klik na ulicu otvara kratku biografiju.</p>
+</div>
+<figure class="wide" id="figMap">
+  <div class="fig-h">
+    <p class="fig-t">Ulice nazvane po ličnostima</p>
+    <p class="fig-s">Ćelija se prikazuje ako kroz nju prolaze bar dve takve ulice. Klik na ćeliju približava mapu i prikazuje ulice.</p>
+  </div>
+  <div class="controls">
+    <label class="ctl">Grad <select id="mapCity"></select></label>
+    <div class="seg" role="group" aria-label="Prikaz mape">
+      <button type="button" data-mode="hex" aria-pressed="true">Toplotna mapa</button>
+      <button type="button" data-mode="lines" aria-pressed="false">Ulice</button>
+    </div>
+    <label class="ctl">Boja <select id="mapColor"><option value="year">godina rođenja</option><option value="gender">pol</option></select></label>
+    <label class="ctl" id="hexCtl">Ćelija
+      <select id="hexSize"><option value="9">≈ 250 m</option><option value="16" selected>≈ 450 m</option><option value="30">≈ 850 m</option></select>
+    </label>
+  </div>
+  <div class="lgd" id="mapLegend"></div>
+  <div id="map" role="region" aria-label="Interaktivna mapa izabranog grada"></div>
+  <p class="status" id="status" aria-live="polite"></p>
+  <figcaption>Podloga © Esri, HERE, Garmin, © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> saradnici.</figcaption>
+</figure>
+
+<div class="col">
+<h3>Svi gradovi u tabeli</h3>
+<div class="tw">
+  <table>
+    <thead><tr><th>Grad</th><th class="n">Imenovanih ulica</th><th class="n">Pokrivenost</th><th class="n">Po ličnosti</th><th class="n">Ličnosti</th><th class="n">Medijana</th><th class="n">Žene</th><th>Najviše ulica</th></tr></thead>
+    <tbody id="cityRows"></tbody>
+  </table>
+</div>
+<p class="small">Iz grafika sa zaključcima izostavljen je grad sa manje od 100 ulica nazvanih po ličnosti: <span id="excluded"></span>. * Pokrivenost podacima ispod <span class="lowN">25</span>%: <span id="lowList"></span>. Za te gradove brojevi pokazuju samo deo ulica i treba ih čitati sa rezervom.</p>
+</div>
+
+<div class="col">
+<h2 id="metod"><span class="kicker">Podaci</span>Kako je napravljeno</h2>
+<ol>
+  <li><strong>Granice gradova</strong> su administrativne granice iz OpenStreetMap-a: Grad Zagreb, Mestna občina Ljubljana, Budimpešta, Beč, Berlin, Prag, Varšava, Pariz (grad, bez predgrađa), Region Brisel-glavni grad (19 opština), opštine Stokholm i Kopenhagen, grad Madrid, opština Lisabon i Dablin. Za Beograd je uzeto uže gradsko područje (granica „Beograd“ u OSM-u, oko 1,2 miliona stanovnika), a ne ceo Grad Beograd. Za centar grada uzet je glavni trg: Terazije, Trg bana Jelačića, Prešernov trg, Deák tér, Stephansplatz, Unter den Linden, Staroměstské náměstí, Plac Zamkowy, Châtelet, Grand-Place, Gamla stan, Rådhuspladsen, Puerta del Sol, Praça do Comércio i O'Connell Bridge.</li>
+  <li><strong>Ulice</strong> su svi putevi (<code>highway=*</code>) sa imenom, preuzeti 13. septembra 2026. preko Overpass API-ja. Segmenti istog imena u jednom gradu čine jednu ulicu.</li>
+  <li><strong>Ličnost</strong> se traži iz tri izvora, istim redom za svaki grad:
+    <ul>
+      <li>OSM oznaka <code>name:etymology:wikidata</code> na bilo kom segmentu ulice (13.273 ulice);</li>
+      <li>OSM oznaka <code>wikidata</code> koja vodi na Wikidata stavku ulice sa svojstvom „nazvano po“ (P138) (578);</li>
+      <li>Wikidata stavka ulice u tom gradu sa svojstvom P138, čiji je naziv jednak nazivu ulice u OSM-u, a koordinata udaljena najviše 2 km od nje (2.278).</li>
+    </ul>
+    Kod druga dva izvora ime osobe mora da se poklapa sa nazivom ulice, jer su pregledom otkrivene sistematske greške. Uparivanje po nazivu hvatalo je i stara imena ulica: madridska <em>Calle de Edgar Neville</em> bila je vezana za frankističkog generala Moscarda, po kome se ranije zvala. OSM veza ponekad vodi na četvrt umesto na ulicu. Ovim pravilom je izbačeno 217 veza.</li>
+  <li>Osoba mora biti čovek (Wikidata P31 = Q5) sa poznatom <strong>godinom rođenja</strong> (P569). Kad je poznat samo vek, uzeta je sredina veka. Izbačene su osobe rođene posle 1930. bez datuma smrti, jer su verovatno pogrešne veze ka živim ljudima (34). <strong>Pol</strong> je svojstvo P21 i poznat je za 99,8% ličnosti.</li>
+  <li>„Pokrivenost“ je udeo imenovanih ulica koje imaju bilo kakvu vezu ka poreklu imena, uključujući i mesta, događaje i pojmove. Gradovi sa pokrivenošću ispod 25% su označeni. Grad sa manje od 100 ulica nazvanih po ličnosti (Dablin) nije uključen u grafike sa zaključcima.</li>
+  <li>Medijana, klase, udeo žena i prstenovi računaju se po <strong>vezama ulica–ličnost</strong>: ličnost sa tri ulice broji se tri puta. Grafik raspodele po decenijama i spisak zajedničkih ličnosti broje svaku ličnost jednom.</li>
+</ol>
+<div class="note"><strong>Ograničenja.</strong> Najveće ograničenje je neujednačena pokrivenost, opisana na početku. Drugo su preostale greške u OSM oznakama. Automatska provera naziva pronalazi odstupanje kod 4–9% veza po gradu, ali su to većinom titule i nadimci (<em>Kronprinsensgade</em>, <em>Rue Royale</em>), pa te veze nisu izbacivane. Treće, ime ulice je jedno za ceo grad: dve ulice istog imena u različitim delovima Berlina ili Madrida računaju se kao jedna.</div>
+<p class="small">Podaci: <a href="/assets/ulice-evropa/summary.json">summary.json</a> (gradovi i ličnosti) i <a href="/assets/ulice-evropa/grad/beograd.json">grad/&lt;grad&gt;.json</a> (ulice i geometrija po gradu). Podaci iz OpenStreetMap-a dostupni su pod licencom <a href="https://opendatacommons.org/licenses/odbl/" target="_blank" rel="noopener">ODbL</a>, a podaci iz Wikidate pod CC0.</p>
+</div>
+</div>
+
+<footer class="site"><div class="wrap"><div class="col">
+  <p><a href="/">dasatomic</a> · <a href="/datascience/2026/09/13/ulice-beograda-licnosti.html">Po kome se zovu beogradske ulice</a></p>
+</div></div></footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/3.0.1/plotly.min.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  /* ============================================ helpers ================== */
+  var CLS = [
+    { label: "do 1499.", hint: "antika i srednji vek" },
+    { label: "1500–1799.", hint: "rani novi vek" },
+    { label: "1800–1849.", hint: "doba revolucija i romantizma" },
+    { label: "1850–1899.", hint: "druga polovina 19. veka" },
+    { label: "1900. i kasnije", hint: "20. vek" }
+  ];
+  var RINGS = ["do 2 km", "2–5 km", "5–10 km", "preko 10 km"];
+  var SRC = ["OSM oznaka porekla imena", "OSM veza ka Wikidata ulici", "Wikidata ulica, upareno po nazivu"];
+  function cls(y) { return y <= 1499 ? 0 : y <= 1799 ? 1 : y <= 1849 ? 2 : y <= 1899 ? 3 : 4; }
+  function css(v) { return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+  function color(k) { return css("--c" + k); }
+  function isDark() {
+    var s = document.documentElement.getAttribute("data-theme");
+    return s ? s === "dark" : window.matchMedia("(prefers-color-scheme: dark)").matches;
+  }
+  function n0(v) { return Math.round(v).toLocaleString("sr-Latn-RS"); }
+  function pct(v, d) { var m = Math.pow(10, d == null ? 1 : d); return (Math.round(v * 100 * m) / m).toLocaleString("sr-Latn-RS") + "%"; }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  function year(y) { return y < 0 ? (-y) + ". p. n. e." : String(Math.round(y)); }
+  function yr(p) { return (p.p < 9 ? "~" : "") + year(p.y); }
+  function life(p) { return yr(p) + (p.d != null ? "–" + year(p.d) : ""); }
+  function median(a) {
+    if (!a.length) return NaN;
+    var s = a.slice().sort(function (x, y) { return x - y; }), m = s.length >> 1;
+    return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+  }
+  function norm(s) { return s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/đ/g, "dj"); }
+  function sw(c) { return '<span class="sw" style="background:' + c + '"></span>'; }
+  function wikiUrl(w) {
+    if (!w) return null;
+    var i = w.indexOf(":");
+    return "https://" + w.slice(0, i) + ".wikipedia.org/wiki/" + encodeURIComponent(w.slice(i + 1));
+  }
+  function byId(id) { return document.getElementById(id); }
+
+  var SUM, P, ALL, CITIES, BYID = {};
+  var MIN_STREETS = 100; // cities with fewer person-streets are shown for coverage only
+  var LOW = 25; // % of named streets with any etymology link below which a city is flagged
+
+  fetch("/assets/ulice-evropa/summary.json?v=6aa7bf4f50").then(function (r) { return r.json(); }).then(function (d) {
+    SUM = d; P = d.persons; ALL = d.cities;
+    ALL.forEach(function (c) {
+      BYID[c.id] = c;
+      c.cov = c.linked / c.named;
+      c.low = 100 * c.cov < LOW;
+      c.wshare = c.women / c.gknown;
+      c.pairs = c.classes.reduce(function (a, b) { return a + b; }, 0);
+    });
+    CITIES = ALL.filter(function (c) { return c.streets >= MIN_STREETS; });
+    init();
+  }).catch(function (e) { byId("status").textContent = "Podaci nisu učitani: " + e; });
+
+  function cityLabel(c) { return c.name + (c.low ? " *" : ""); }
+
+  /* ============================================ init ===================== */
+  function init() {
+    var persons = Object.keys(P);
+    var totalStreets = ALL.reduce(function (a, c) { return a + c.streets; }, 0);
+    var women = persons.filter(function (q) { return P[q].g === "f"; }).length;
+    var gk = persons.filter(function (q) { return P[q].g; }).length;
+    [[String(ALL.length), "gradova", ""],
+     [n0(totalStreets), "ulica sa imenom ličnosti", "jedan naziv po gradu"],
+     [n0(persons.length), "različitih ličnosti", ""],
+     [pct(women / gk), "ličnosti su žene", "u svih 15 gradova zajedno"]].forEach(function (t) {
+      byId("tiles").insertAdjacentHTML("beforeend", '<div class="tile"><div class="v">' + t[0] + '</div><div class="k">' + t[1] + "</div>" + (t[2] ? '<div class="s">' + t[2] + "</div>" : "") + "</div>");
+    });
+    var ul = byId("classList");
+    CLS.forEach(function (c, k) { ul.insertAdjacentHTML("beforeend", "<li>" + sw(color(k)) + " <strong>" + c.label + "</strong> " + c.hint + "</li>"); });
+    byId("excluded").textContent = ALL.filter(function (c) { return c.streets < MIN_STREETS; }).map(function (c) { return c.name + " (" + c.streets + " ulica)"; }).join(", ");
+    byId("lowList").textContent = ALL.filter(function (c) { return c.low; }).map(function (c) { return c.name; }).join(", ");
+
+    // city selects
+    ["mapCity", "histCity", "topCity"].forEach(function (id) {
+      var sel = byId(id);
+      sel.innerHTML = (id === "mapCity" ? ALL : CITIES).map(function (c) { return '<option value="' + c.id + '">' + esc(c.name) + "</option>"; }).join("");
+    });
+    byId("mapCity").onchange = function () { loadCity(this.value); };
+    byId("histCity").onchange = drawHist;
+    byId("topCity").onchange = drawCityTop;
+    Array.prototype.forEach.call(document.querySelectorAll(".seg button[data-mode]"), function (b) {
+      b.onclick = function () { setMode(b.dataset.mode); };
+    });
+    byId("hexSize").onchange = refresh;
+    byId("mapColor").onchange = function () { buildMapLegend(); refresh(); };
+
+    buildPlotLegends();
+    drawPlots();
+    buildTable();
+    buildMap();
+    loadCity("beograd");
+  }
+
+  /* ============================================ plots ==================== */
+  var CONFIG = { displayModeBar: false, responsive: true };
+  function layout(extra) {
+    var base = {
+      paper_bgcolor: "rgba(0,0,0,0)", plot_bgcolor: "rgba(0,0,0,0)",
+      font: { family: '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif', size: 13, color: css("--text-secondary") },
+      hoverlabel: { bgcolor: css("--surface-1"), bordercolor: css("--rule"), font: { color: css("--text-primary"), size: 13 } },
+      xaxis: { gridcolor: css("--grid"), linecolor: css("--rule"), zeroline: false, tickfont: { color: css("--text-muted") } },
+      yaxis: { gridcolor: css("--grid"), linecolor: css("--rule"), zeroline: false, tickfont: { color: css("--text-muted") } },
+      showlegend: false, bargap: 0.3
+    };
+    Object.keys(extra).forEach(function (k) {
+      base[k] = (typeof extra[k] === "object" && base[k] && !Array.isArray(extra[k])) ? Object.assign({}, base[k], extra[k]) : extra[k];
+    });
+    return base;
+  }
+  function wire(el, fn) { if (!el.__wired) { el.on("plotly_click", fn); el.__wired = true; } }
+  function buildPlotLegends() {
+    var h = CLS.map(function (c, k) { return "<span>" + sw(color(k)) + c.label + "</span>"; }).join("");
+    ["lgdClasses", "lgdHist"].forEach(function (id) { byId(id).innerHTML = h; });
+  }
+  function drawPlots() { drawCoverage(); drawMedian(); drawClasses(); drawWomen(); drawRings(); drawHist(); drawShared(); drawCityTop(); }
+  function goMap(id) { byId("mapCity").value = id; loadCity(id); byId("figMap").scrollIntoView({ behavior: "smooth", block: "start" }); }
+
+  // coverage: share of named streets with any etymology link, and with a person
+  function drawCoverage() {
+    var cs = ALL.slice().sort(function (a, b) { return a.cov - b.cov; });
+    var el = byId("coverage");
+    Plotly.react(el, [{
+      type: "bar", orientation: "h", y: cs.map(cityLabel), x: cs.map(function (c) { return 100 * c.cov; }), customdata: cs.map(function (c) { return c.id; }),
+      marker: { color: cs.map(function (c) { return c.low ? css("--mark-mute") : css("--series-1"); }), cornerradius: 3 },
+      text: cs.map(function (c) { return pct(c.cov, 0); }), textposition: "outside", cliponaxis: false, textfont: { color: css("--text-secondary"), size: 12 },
+      hovertext: cs.map(function (c) {
+        return "<b>" + c.name + "</b><br>" + n0(c.named) + " imenovanih ulica<br>" + n0(c.linked) + " sa vezom ka poreklu imena (" + pct(c.cov) + ")<br>" +
+          n0(c.streets) + " nazvano po ličnosti sa godinom rođenja (" + pct(c.streets / c.named) + ")";
+      }),
+      hovertemplate: "%{hovertext}<extra></extra>"
+    }], layout({
+      margin: { l: 110, r: 40, t: 6, b: 40 },
+      xaxis: { range: [0, 100], ticksuffix: "%", dtick: 25 },
+      yaxis: { gridcolor: "rgba(0,0,0,0)", tickfont: { color: css("--text-secondary") } },
+      shapes: [{ type: "line", x0: LOW, x1: LOW, yref: "paper", y0: 0, y1: 1, line: { color: css("--text-muted"), width: 1, dash: "dot" } }]
+    }), CONFIG);
+    wire(el, function (ev) { goMap(ev.points[0].customdata); });
+  }
+
+  // median birth year with IQR
+  function drawMedian() {
+    var cs = CITIES.slice().sort(function (a, b) { return b.median - a.median; });
+    var el = byId("median");
+    var ink = css("--series-1");
+    Plotly.react(el, [{
+      type: "scatter", mode: "lines", x: [].concat.apply([], cs.map(function (c) { return [c.q1, c.q3, null]; })),
+      y: [].concat.apply([], cs.map(function (c) { return [cityLabel(c), cityLabel(c), null]; })),
+      line: { color: css("--mark-mute"), width: 6 }, hoverinfo: "skip"
+    }, {
+      type: "scatter", mode: "markers+text", x: cs.map(function (c) { return c.median; }), y: cs.map(cityLabel), customdata: cs.map(function (c) { return c.id; }),
+      marker: { color: cs.map(function (c) { return c.low ? css("--surface-1") : ink; }), size: 12, line: { color: ink, width: 2 } },
+      text: cs.map(function (c) { return String(Math.round(c.median)); }), textposition: "middle right", textfont: { color: css("--text-secondary"), size: 12 },
+      hovertext: cs.map(function (c) {
+        return "<b>" + c.name + "</b><br>medijana rođenja: " + Math.round(c.median) + "<br>srednja polovina: " + Math.round(c.q1) + "–" + Math.round(c.q3) + "<br>" + n0(c.pairs) + " veza ulica–ličnost";
+      }),
+      hovertemplate: "%{hovertext}<extra></extra>"
+    }], layout({
+      margin: { l: 110, r: 50, t: 6, b: 40 },
+      xaxis: { title: { text: "godina rođenja", font: { color: css("--text-muted"), size: 12 } } },
+      yaxis: { gridcolor: "rgba(0,0,0,0)", tickfont: { color: css("--text-secondary") } }
+    }), CONFIG);
+    wire(el, function (ev) { if (ev.points[0].customdata) goMap(ev.points[0].customdata); });
+  }
+
+  // class shares
+  function drawClasses() {
+    var cs = CITIES.slice().sort(function (a, b) { return b.median - a.median; });
+    var el = byId("classes");
+    Plotly.react(el, CLS.map(function (c, k) {
+      return {
+        type: "bar", orientation: "h", y: cs.map(cityLabel), customdata: cs.map(function (x) { return x.id; }),
+        x: cs.map(function (x) { return 100 * x.classes[k] / x.pairs; }),
+        marker: { color: color(k), line: { color: css("--surface-1"), width: 2 } },
+        hovertext: cs.map(function (x) { return "<b>" + x.name + "</b><br>" + c.label + ": " + n0(x.classes[k]) + " od " + n0(x.pairs) + " (" + pct(x.classes[k] / x.pairs) + ")"; }),
+        hovertemplate: "%{hovertext}<extra></extra>"
+      };
+    }), layout({
+      barmode: "stack", bargap: 0.28, margin: { l: 110, r: 16, t: 6, b: 40 },
+      xaxis: { range: [0, 100], ticksuffix: "%", dtick: 25 },
+      yaxis: { gridcolor: "rgba(0,0,0,0)", tickfont: { color: css("--text-secondary") } }
+    }), CONFIG);
+    wire(el, function (ev) { goMap(ev.points[0].customdata); });
+  }
+
+  // women share
+  function drawWomen() {
+    var cs = CITIES.slice().sort(function (a, b) { return a.wshare - b.wshare; });
+    var all = CITIES.reduce(function (a, c) { return a + c.women; }, 0) / CITIES.reduce(function (a, c) { return a + c.gknown; }, 0);
+    var el = byId("women");
+    Plotly.react(el, [{
+      type: "bar", orientation: "h", y: cs.map(cityLabel), x: cs.map(function (c) { return 100 * c.wshare; }), customdata: cs.map(function (c) { return c.id; }),
+      marker: { color: cs.map(function (c) { return c.low ? css("--mark-mute") : css("--g-f"); }), cornerradius: 3 },
+      text: cs.map(function (c) { return pct(c.wshare); }), textposition: "outside", cliponaxis: false, textfont: { color: css("--text-secondary"), size: 12 },
+      hovertext: cs.map(function (c) { return "<b>" + c.name + "</b><br>žene: " + n0(c.women) + " od " + n0(c.gknown) + " veza ulica–ličnost (" + pct(c.wshare) + ")"; }),
+      hovertemplate: "%{hovertext}<extra></extra>"
+    }], layout({
+      margin: { l: 110, r: 50, t: 6, b: 40 },
+      xaxis: { ticksuffix: "%", rangemode: "tozero" },
+      yaxis: { gridcolor: "rgba(0,0,0,0)", tickfont: { color: css("--text-secondary") } },
+      shapes: [{ type: "line", x0: 100 * all, x1: 100 * all, yref: "paper", y0: 0, y1: 1, line: { color: css("--text-muted"), width: 1, dash: "dot" } }]
+    }), CONFIG);
+    wire(el, function (ev) { goMap(ev.points[0].customdata); });
+  }
+
+  // center -> periphery: small multiples, one line per city, same y scale
+  function drawRings() {
+    var cs = CITIES.slice().sort(function (a, b) { return b.median - a.median; });
+    var cols = 5, rows = Math.ceil(cs.length / cols), traces = [], lay = layout({ margin: { l: 44, r: 10, t: 24, b: 30 }, annotations: [] });
+    var ys = []; cs.forEach(function (c) { c.rings.forEach(function (r) { if (r[1] != null && r[0] >= 20) ys.push(r[1]); }); });
+    var lo = Math.floor(Math.min.apply(null, ys) / 20) * 20, hi = Math.ceil(Math.max.apply(null, ys) / 20) * 20;
+    cs.forEach(function (c, i) {
+      var ax = i === 0 ? "" : String(i + 1), row = Math.floor(i / cols), col = i % cols;
+      var pts = c.rings.map(function (r, j) { return { x: j, y: r[0] >= 20 ? r[1] : null, n: r[0] }; });
+      traces.push({
+        type: "scatter", mode: "lines+markers", xaxis: "x" + ax, yaxis: "y" + ax,
+        x: pts.map(function (p) { return p.x; }), y: pts.map(function (p) { return p.y; }),
+        line: { color: c.low ? css("--mark-mute") : css("--series-1"), width: 2 }, marker: { size: 8, color: c.low ? css("--mark-mute") : css("--series-1"), line: { color: css("--surface-1"), width: 2 } },
+        hovertext: pts.map(function (p) { return "<b>" + c.name + "</b>, " + RINGS[p.x] + " od centra<br>" + (p.y == null ? "premalo ulica (" + p.n + ")" : "medijana rođenja " + Math.round(p.y) + " · " + n0(p.n) + " veza"); }),
+        hovertemplate: "%{hovertext}<extra></extra>", connectgaps: false
+      });
+      var gx = 0.035, gy = 0.09, w = (1 - gx * (cols - 1)) / cols, h = (1 - gy * (rows - 1)) / rows;
+      var x0 = col * (w + gx), y1 = 1 - row * (h + gy);
+      lay["xaxis" + ax] = { domain: [x0, x0 + w], anchor: "y" + ax, range: [-0.3, 3.3], tickvals: [0, 1, 2, 3], ticktext: ["0", "2", "5", "10+"], showgrid: false, zeroline: false, linecolor: css("--rule"), tickfont: { color: css("--text-muted"), size: 10 } };
+      lay["yaxis" + ax] = { domain: [y1 - h, y1], anchor: "x" + ax, range: [lo, hi], gridcolor: css("--grid"), zeroline: false, tickfont: { color: css("--text-muted"), size: 10 }, showticklabels: col === 0, dtick: 20 };
+      lay.annotations.push({ xref: "x" + ax + " domain", yref: "y" + ax + " domain", x: 0, y: 1.16, xanchor: "left", showarrow: false, text: "<b>" + cityLabel(c) + "</b>", font: { size: 12, color: css("--text-primary") } });
+    });
+    Plotly.react(byId("rings"), traces, lay, CONFIG);
+  }
+
+  // per-city histogram vs all cities
+  function drawHist() {
+    var id = byId("histCity").value || "beograd", bin = 10, start = 1500, end = 2000;
+    var edges = []; for (var e = start; e < end; e += bin) edges.push(e);
+    function dist(pred) {
+      var ids = Object.keys(P).filter(pred), n = ids.length, out = edges.map(function () { return 0; }), early = 0;
+      ids.forEach(function (q) { var y = P[q].y; if (y < start) { early++; return; } var b = Math.floor((y - start) / bin); if (b < out.length) out[b]++; });
+      return { share: out.map(function (v) { return 100 * v / n; }), n: n, early: early };
+    }
+    var one = dist(function (q) { return P[q].c.indexOf(id) >= 0; }), all = dist(function () { return true; });
+    var el = byId("hist");
+    Plotly.react(el, [{
+      type: "bar", x: edges.map(function (e0) { return e0 + bin / 2; }), y: one.share, width: bin * 0.86,
+      marker: { color: edges.map(function (e0) { return color(cls(e0)); }), line: { width: 0 } },
+      hovertext: edges.map(function (e0, i) { return "<b>" + BYID[id].name + ", " + e0 + "-e</b><br>" + pct(one.share[i] / 100) + " ličnosti · svi gradovi: " + pct(all.share[i] / 100); }),
+      hovertemplate: "%{hovertext}<extra></extra>"
+    }, {
+      type: "scatter", mode: "lines", x: edges.map(function (e0) { return e0 + bin / 2; }), y: all.share, line: { color: css("--text-primary"), width: 2, shape: "hvh" }, hoverinfo: "skip"
+    }], layout({
+      margin: { l: 48, r: 14, t: 8, b: 40 },
+      xaxis: { range: [start, end], dtick: 50, showgrid: false, ticks: "outside", ticklen: 4, tickcolor: css("--rule") },
+      yaxis: { ticksuffix: "%", title: { text: "udeo ličnosti grada", font: { color: css("--text-muted"), size: 12 } }, rangemode: "tozero" }
+    }), CONFIG);
+    byId("histCap").textContent = BYID[id].name + ": " + n0(one.n) + " ličnosti, od toga " + n0(one.early) + " (" + pct(one.early / one.n) + ") rođeno pre 1500. i nije na grafiku. U svih 15 gradova zajedno pre 1500. rođeno je " + pct(all.early / all.n) + ".";
+  }
+
+  // persons with streets in the most cities
+  function drawShared() {
+    var ids = Object.keys(P).filter(function (q) { return P[q].c.length >= 4; })
+      .sort(function (a, b) { return P[b].c.length - P[a].c.length || P[b].s - P[a].s; }).slice(0, 30).reverse();
+    var el = byId("shared");
+    Plotly.react(el, [{
+      type: "bar", orientation: "h", y: ids.map(function (q) { return P[q].n; }), x: ids.map(function (q) { return P[q].c.length; }),
+      marker: { color: ids.map(function (q) { return color(cls(P[q].y)); }), cornerradius: 3 },
+      text: ids.map(function (q) { return String(P[q].c.length); }), textposition: "outside", cliponaxis: false, textfont: { color: css("--text-secondary"), size: 12 },
+      hovertext: ids.map(function (q) {
+        return "<b>" + esc(P[q].n) + "</b> (" + life(P[q]) + ")<br>" + esc(P[q].ds || "") + "<br>ulica u: " + P[q].c.map(function (c) { return BYID[c].name; }).join(", ");
+      }),
+      hovertemplate: "%{hovertext}<extra></extra>"
+    }], layout({
+      margin: { l: 200, r: 30, t: 6, b: 40 },
+      xaxis: { range: [0, ALL.length + 0.5], dtick: 3, title: { text: "u koliko od 15 gradova ima ulicu", font: { color: css("--text-muted"), size: 12 } } },
+      yaxis: { gridcolor: "rgba(0,0,0,0)", tickfont: { color: css("--text-secondary") }, automargin: true }
+    }), CONFIG);
+  }
+
+  // top persons in one city
+  function drawCityTop() {
+    var c = BYID[byId("topCity").value || "beograd"];
+    var top = c.top.slice(0, 12).reverse();
+    var el = byId("cityTop");
+    Plotly.react(el, [{
+      type: "bar", orientation: "h", y: top.map(function (t) { return P[t[0]].n; }), x: top.map(function (t) { return t[1]; }),
+      marker: { color: top.map(function (t) { return color(cls(P[t[0]].y)); }), cornerradius: 3 },
+      text: top.map(function (t) { return String(t[1]); }), textposition: "outside", cliponaxis: false, textfont: { color: css("--text-secondary"), size: 12 },
+      hovertext: top.map(function (t) { var p = P[t[0]]; return "<b>" + esc(p.n) + "</b> (" + life(p) + ")<br>" + esc(p.ds || "") + "<br>" + t[1] + " ulica u gradu"; }),
+      hovertemplate: "%{hovertext}<extra></extra>"
+    }], layout({
+      margin: { l: 200, r: 30, t: 6, b: 40 },
+      xaxis: { dtick: 1, rangemode: "tozero", title: { text: "broj ulica sa tim imenom u gradu", font: { color: css("--text-muted"), size: 12 } } },
+      yaxis: { gridcolor: "rgba(0,0,0,0)", tickfont: { color: css("--text-secondary") }, automargin: true }
+    }), CONFIG);
+  }
+
+  /* ============================================ city table ================ */
+  function buildTable() {
+    var cs = ALL.slice().sort(function (a, b) { return b.median - a.median; });
+    byId("cityRows").innerHTML = cs.map(function (c) {
+      return "<tr><td class='name'>" + esc(c.name) + (c.low ? " *" : "") + "</td><td class='n'>" + n0(c.named) + "</td><td class='n'>" + pct(c.cov, 0) +
+        "</td><td class='n'>" + n0(c.streets) + "</td><td class='n'>" + n0(c.persons) + "</td><td class='n'>" + (c.streets >= MIN_STREETS ? Math.round(c.median) : "–") +
+        "</td><td class='n'>" + (c.streets >= MIN_STREETS ? pct(c.wshare) : "–") + "</td><td class='name'>" + c.top.slice(0, 3).map(function (t) { return esc(P[t[0]].n); }).join(", ") + "</td></tr>";
+    }).join("");
+  }
+
+  /* ============================================ map ====================== */
+  var map, tiles, labels, renderer, lineLayer, hexLayer, city = null, state = { mode: "hex" };
+  function buildMap() {
+    renderer = L.canvas({ tolerance: 6, padding: 0.3 });
+    map = L.map("map", { preferCanvas: true, zoomSnap: 0.5, minZoom: 8, maxZoom: 18 }).setView([44.8125, 20.4612], 12);
+    map.createPane("labels"); map.getPane("labels").style.zIndex = 450; map.getPane("labels").style.pointerEvents = "none";
+    setTiles();
+    lineLayer = L.layerGroup(); hexLayer = L.layerGroup();
+    map.on("zoomend", function () { if (state.mode === "lines" && city) city.streets.forEach(function (s) { s.poly.setStyle({ weight: lineWeight() }); }); });
+    buildMapLegend();
+  }
+  function setTiles() {
+    if (tiles) map.removeLayer(tiles);
+    if (labels) map.removeLayer(labels);
+    var base = "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_" + (isDark() ? "Dark" : "Light") + "_Gray_";
+    tiles = L.tileLayer(base + "Base/MapServer/tile/{z}/{y}/{x}", { maxNativeZoom: 16, maxZoom: 18,
+      attribution: 'Podloga &copy; <a href="https://www.esri.com/">Esri</a>, HERE, Garmin, &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' }).addTo(map);
+    labels = L.tileLayer(base + "Reference/MapServer/tile/{z}/{y}/{x}", { maxNativeZoom: 16, maxZoom: 18, pane: "labels" }).addTo(map);
+    tiles.bringToBack();
+  }
+  function lineWeight() { var z = map.getZoom(); return z <= 11 ? 1.5 : z <= 13 ? 2.5 : z <= 15 ? 3.5 : 5; }
+  var SHARE = ["bez žena", "do 15% žena", "15–30% žena", "30% i više"];
+  function shareBin(f) { return f === 0 ? 0 : f < 0.15 ? 1 : f < 0.3 ? 2 : 3; }
+  function byGender() { return byId("mapColor").value === "gender"; }
+  function buildMapLegend() {
+    byId("mapLegend").innerHTML = byGender()
+      ? SHARE.map(function (l, b) { return "<span>" + sw(css("--s" + b)) + l + "</span>"; }).join("") + (state.mode === "lines" ? "" : "")
+      : CLS.map(function (c, k) { return "<span>" + sw(color(k)) + c.label + "</span>"; }).join("");
+    if (byGender() && state.mode === "lines") byId("mapLegend").innerHTML = "<span>" + sw(css("--g-m")) + "muškarci</span><span>" + sw(css("--g-f")) + "žene</span>";
+  }
+  var cache = {};
+  function loadCity(id) {
+    var c = BYID[id];
+    byId("status").textContent = "Učitavam " + c.name + "…";
+    (cache[id] ? Promise.resolve(cache[id]) : fetch("/assets/ulice-evropa/grad/" + id + ".json?v=" + c.hash).then(function (r) { return r.json(); })).then(function (d) {
+      if (!cache[id]) {
+        d.streets = d.streets.map(function (r, i) {
+          var parts = r[5].map(function (f) {
+            var a = [], la = f[0], lo = f[1]; a.push([la / 1e5, lo / 1e5]);
+            for (var j = 2; j < f.length; j += 2) { la += f[j]; lo += f[j + 1]; a.push([la / 1e5, lo / 1e5]); }
+            return a;
+          });
+          var ys = r[1].map(function (q) { return P[q].y; });
+          var y = ys.reduce(function (a, b) { return a + b; }, 0) / ys.length;
+          var s = { i: i, name: r[0], q: r[1], src: r[2], len: r[3], km: r[4], parts: parts, y: y, k: cls(y), g: r[1].some(function (q) { return P[q].g === "f"; }) ? "f" : "m" };
+          s.poly = L.polyline(parts, { renderer: renderer, weight: 2.5, opacity: 0.95 });
+          s.poly.bindTooltip(function () { return streetTip(s); }, { sticky: true, direction: "top", offset: [0, -8] });
+          s.poly.bindPopup(function () { return streetPopup(s); }, { maxWidth: 320 });
+          s.poly.on("mouseover", function () { s.poly.setStyle({ weight: lineWeight() + 3 }); s.poly.bringToFront(); });
+          s.poly.on("mouseout", function () { s.poly.setStyle({ weight: lineWeight() }); });
+          return s;
+        });
+        cache[id] = d;
+      }
+      city = cache[id]; city.meta = c;
+      var b = L.latLngBounds([]); city.streets.forEach(function (s) { if (s.km < 12) b.extend(s.poly.getBounds()); });
+      if (b.isValid()) map.fitBounds(b, { padding: [10, 10] }); else map.setView(c.center, 12);
+      refresh();
+    });
+  }
+  function personLine(q) {
+    var p = P[q];
+    return '<div class="tt-row">' + sw(byGender() ? css("--g-" + (p.g === "f" ? "f" : "m")) : color(cls(p.y))) + "<span>" + esc(p.n) + ' <span class="tt-muted">' + life(p) + "</span></span></div>";
+  }
+  function streetTip(s) { return "<strong>" + esc(s.name) + "</strong>" + s.q.map(personLine).join(""); }
+  function streetPopup(s) {
+    return "<strong>" + esc(s.name) + "</strong>" + s.q.map(function (q) {
+      var p = P[q], u = wikiUrl(p.w);
+      return "<p style='margin:8px 0 0'>" + personLine(q) + (p.ds ? "<span class='tt-muted'>" + esc(p.ds) + "</span><br>" : "") +
+        (u ? "<a target='_blank' rel='noopener' href='" + u + "'>Vikipedija</a> · " : "") + "<a target='_blank' rel='noopener' href='https://www.wikidata.org/wiki/" + q + "'>Wikidata</a></p>";
+    }).join("") + "<p class='tt-muted' style='margin:8px 0 0'>Izvor: " + SRC[s.src] + " · " + n0(s.len) + " m · " + s.km.toLocaleString("sr-Latn-RS") + " km od centra</p>";
+  }
+  var HZ = 13;
+  function hexKey(x, y, r) {
+    var cx = (x * Math.sqrt(3) / 3 - y / 3) / r, cz = (y * 2 / 3) / r, cy = -cx - cz;
+    var rx = Math.round(cx), ry = Math.round(cy), rz = Math.round(cz);
+    var dx = Math.abs(rx - cx), dy = Math.abs(ry - cy), dz = Math.abs(rz - cz);
+    if (dx > dy && dx > dz) rx = -ry - rz; else if (dy > dz) ry = -rx - rz; else rz = -rx - ry;
+    return rx + "," + rz;
+  }
+  function hexKeysFor(s, r) {
+    s.hex = s.hex || {};
+    if (s.hex[r]) return s.hex[r];
+    var keys = {}, step = r * 0.6;
+    s.parts.forEach(function (pt) {
+      var prev = null;
+      pt.forEach(function (ll) {
+        var p = map.project(ll, HZ);
+        if (prev) { var dx = p.x - prev.x, dy = p.y - prev.y, n = Math.max(1, Math.ceil(Math.sqrt(dx * dx + dy * dy) / step)); for (var t = 1; t <= n; t++) keys[hexKey(prev.x + dx * t / n, prev.y + dy * t / n, r)] = 1; }
+        else keys[hexKey(p.x, p.y, r)] = 1;
+        prev = p;
+      });
+    });
+    return (s.hex[r] = Object.keys(keys));
+  }
+  function hexPolygon(key, r) {
+    var a = key.split(","), q = +a[0], rr = +a[1], cx = r * Math.sqrt(3) * (q + rr / 2), cy = r * 1.5 * rr, pts = [];
+    for (var i = 0; i < 6; i++) { var ang = Math.PI / 180 * (60 * i - 30); pts.push(map.unproject([cx + r * 0.97 * Math.cos(ang), cy + r * 0.97 * Math.sin(ang)], HZ)); }
+    return pts;
+  }
+  function setMode(m) {
+    state.mode = m;
+    Array.prototype.forEach.call(document.querySelectorAll(".seg button[data-mode]"), function (b) { b.setAttribute("aria-pressed", b.dataset.mode === m); });
+    buildMapLegend(); refresh();
+  }
+  function refresh() {
+    if (!city) return;
+    lineLayer.clearLayers(); hexLayer.clearLayers(); map.removeLayer(lineLayer); map.removeLayer(hexLayer);
+    byId("hexCtl").style.display = state.mode === "hex" ? "" : "none";
+    var gender = byGender();
+    if (state.mode === "lines") {
+      var w = lineWeight();
+      city.streets.slice().sort(gender ? function (a, b) { return (a.g === "f") - (b.g === "f"); } : function (a, b) { return b.y - a.y; }).forEach(function (s) {
+        s.poly.setStyle({ color: gender ? css("--g-" + s.g) : color(s.k), weight: w }); lineLayer.addLayer(s.poly);
+      });
+      lineLayer.addTo(map);
+    } else {
+      var r = +byId("hexSize").value, cells = {};
+      city.streets.forEach(function (s) {
+        hexKeysFor(s, r).forEach(function (k) {
+          var c = cells[k] || (cells[k] = { ys: [], gs: [], st: [] });
+          s.q.forEach(function (q) { c.ys.push(P[q].y); if (P[q].g) c.gs.push(P[q].g); });
+          c.st.push(s);
+        });
+      });
+      Object.keys(cells).forEach(function (k) {
+        var c = cells[k]; if (c.st.length < 2) return;
+        c.med = median(c.ys); c.f = c.gs.length ? c.gs.filter(function (g) { return g === "f"; }).length / c.gs.length : 0;
+        var poly = L.polygon(hexPolygon(k, r), { renderer: renderer, stroke: true, color: css("--surface-1"), weight: 1, opacity: 0.6,
+          fillColor: gender ? css("--s" + shareBin(c.f)) : color(cls(c.med)), fillOpacity: 0.8 });
+        poly.bindTooltip(function () {
+          var st = c.st.slice().sort(function (a, b) { return a.y - b.y; });
+          return "<strong>Medijana rođenja: " + Math.round(c.med) + ".</strong><br><span class='tt-muted'>" + pct(c.f) + " žena · " + c.st.length + " ulica, od najstarije:</span>" +
+            st.slice(0, 6).map(function (s) { return '<div class="tt-row">' + sw(color(s.k)) + "<span>" + esc(s.name) + ' <span class="tt-muted">' + s.q.map(function (q) { return yr(P[q]); }).join(", ") + "</span></span></div>"; }).join("") +
+            (st.length > 6 ? "<span class='tt-muted'>… i još " + (st.length - 6) + "</span>" : "");
+        }, { sticky: true, direction: "top", offset: [0, -8] });
+        poly.on("mouseover", function () { poly.setStyle({ weight: 2.5, color: css("--text-primary"), opacity: 1 }); });
+        poly.on("mouseout", function () { poly.setStyle({ weight: 1, color: css("--surface-1"), opacity: 0.6 }); });
+        poly.on("click", function () { map.setView(poly.getBounds().getCenter(), Math.max(map.getZoom(), 15)); setMode("lines"); });
+        hexLayer.addLayer(poly);
+      });
+      hexLayer.addTo(map);
+    }
+    var m = city.meta;
+    byId("status").textContent = m.name + ": " + n0(m.streets) + " ulica sa imenom ličnosti od " + n0(m.named) + " imenovanih, medijana rođenja " + Math.round(m.median) + ", " + pct(m.wshare) + " žena." + (m.low ? " Pokrivenost podacima je niska, pa mapa pokazuje samo deo ulica." : "");
+  }
+
+  /* ============================================ theme ==================== */
+  (function () {
+    var btn = byId("themeBtn"), mq = window.matchMedia("(prefers-color-scheme: dark)");
+    function sync() {
+      btn.textContent = isDark() ? "Svetla tema" : "Tamna tema";
+      if (!SUM) return;
+      setTiles(); buildPlotLegends(); buildMapLegend(); drawPlots(); refresh();
+      var ul = byId("classList"); ul.innerHTML = ""; CLS.forEach(function (c, k) { ul.insertAdjacentHTML("beforeend", "<li>" + sw(color(k)) + " <strong>" + c.label + "</strong> " + c.hint + "</li>"); });
+    }
+    btn.addEventListener("click", function () { document.documentElement.setAttribute("data-theme", isDark() ? "light" : "dark"); sync(); });
+    mq.addEventListener("change", sync);
+    btn.textContent = isDark() ? "Svetla tema" : "Tamna tema";
+  })();
+})();
+
+</script>
+</body>
+</html>
