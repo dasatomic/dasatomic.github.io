@@ -3,7 +3,7 @@ layout: post
 title:  "Teslin transformator na stolu: kako 12 volti postane nekoliko hiljada"
 date:   2026-10-04 12:00:00 +0100
 categories: Nauka
-excerpt: "Sin (12) i ja smo sklopili mali Teslin transformator iz kita od 540 dinara. Šta radi svaka komponenta, odakle hiljade volti iz adaptera od 12 V, zašto sijalica svetli bez žica, zašto je čaša ne zaustavlja, a aluminijumska folija zaustavlja — i šta još da probate."
+excerpt: "Pavle (12) i ja smo sklopili mali Teslin transformator iz kita od 540 dinara. Šta radi svaka komponenta, odakle hiljade volti iz adaptera od 12 V, zašto sijalica svetli bez žica, zašto je čaša ne zaustavlja, a aluminijumska folija zaustavlja — i šta još da probate."
 ---
 
 <style>
@@ -18,7 +18,7 @@ excerpt: "Sin (12) i ja smo sklopili mali Teslin transformator iz kita od 540 di
 .post-content h3 { margin-top: 1.6em; }
 </style>
 
-Moj sin (12 godina) i ja proveli smo jedan vikend sa lemilicom, tinolom i [kitom „Teslin transformator 9–12 VDC"](https://www.mikroprinc.com/sr/proizvod/kit-komplet-teslin-transformator-9-12vdc) iz Mikroprinca. Kesica sa dvadesetak delova, pločica 31 × 40 mm, i na kraju — mala ljubičasta munja na vrhu kalema i fluorescentna sijalica koja svetli u vazduhu, a da je ništa ne dodiruje.
+Moj sin Pavle (12 godina) i ja proveli smo jedan vikend sa lemilicom, tinolom i [kitom „Teslin transformator 9–12 VDC"](https://www.mikroprinc.com/sr/proizvod/kit-komplet-teslin-transformator-9-12vdc) iz Mikroprinca. Kesica sa dvadesetak delova, pločica 31 × 40 mm, i na kraju — mala ljubičasta munja na vrhu kalema i fluorescentna sijalica koja svetli u vazduhu, a da je ništa ne dodiruje.
 
 Ovaj tekst je pokušaj da zapišemo sve što smo usput naučili, i ono što smo morali da proverimo posle: šta svaka komponenta radi, kako se 12 volti iz adaptera pretvori u hiljade volti, i zašto se sa sijalicom, čašom i aluminijumskom folijom dešava baš ono što se dešava.
 
@@ -200,7 +200,7 @@ Prekidač i utičnica su tu da se ne bi mrdao kabl. Sijalica iz kita je mala gas
 
 ## Kako 12 volti postane nekoliko hiljada
 
-Ovo je pitanje koje je sin postavio prvo, pa ga rešavamo u tri koraka.
+Ovo je pitanje koje je Pavle postavio prvo, pa ga rešavamo u tri koraka.
 
 ### Korak 1: odnos navoja
 
@@ -402,7 +402,7 @@ Sve ovo je urađeno sa istim kitom i stvarima iz kuće:
 
 Najbolji deo ovog projekta nije bila munja, nego trenutak kad je jasno zašto čaša ne radi ništa, a folija radi sve. Iz 540 dinara delova izlazi dobar deo fizike iz osmog razreda i prve godine elektrotehnike: indukcija, rezonancija, provodnici i izolatori, plazma, i jedna priča o čoveku iz Smiljana koji je sve ovo smislio pre 135 godina.
 
-<!-- FOTO: sin drži sijalicu koja svetli -->
+<!-- FOTO: Pavle drži sijalicu koja svetli -->
 
 ---
 
