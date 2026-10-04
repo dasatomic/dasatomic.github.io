@@ -16,9 +16,12 @@ excerpt: "Pavle (12) i ja smo sklopili mali Teslin transformator iz kita od 540 
 .post-content .formula { font-family: Georgia, "Times New Roman", serif; font-size: 1.12em; text-align: center; margin: 1em 0; }
 .post-content h2 { margin-top: 2.2em; }
 .post-content h3 { margin-top: 1.6em; }
+.post-content .legend { margin: 0 0 1.5em; }
+.post-content .legend p { margin: .35em 0; font-size: .95em; }
+.post-content .chip { display: inline-block; width: .9em; height: .9em; border-radius: 3px; vertical-align: -.1em; margin-right: .5em; }
 </style>
 
-Moj sin Pavle (12 godina) i ja proveli smo jedan vikend sa lemilicom, tinolom i [kitom „Teslin transformator 9–12 VDC"](https://www.mikroprinc.com/sr/proizvod/kit-komplet-teslin-transformator-9-12vdc) iz Mikroprinca. Kesica sa dvadesetak delova, pločica 31 × 40 mm, i na kraju — mala ljubičasta munja na vrhu kalema i fluorescentna sijalica koja svetli u vazduhu, a da je ništa ne dodiruje.
+Moj sin Pavle (12 godina) i ja proveli smo jedan vikend sa lemilicom, tinolom i [kitom „Teslin transformator 9–12 VDC"](https://www.mikroprinc.com/sr/proizvod/kit-komplet-teslin-transformator-9-12vdc) iz Mikroprinca. Kesica sa dvadesetak delova, pločica 31 × 40 mm, i na kraju — mala ljubičasta munja na vrhu kalema i sijalica koja svetli u vazduhu, a da je ništa ne dodiruje.
 
 Ovaj tekst je pokušaj da zapišemo sve što smo usput naučili, i ono što smo morali da proverimo posle: šta svaka komponenta radi, kako se 12 volti iz adaptera pretvori u hiljade volti, i zašto se sa sijalicom, čašom i aluminijumskom folijom dešava baš ono što se dešava.
 
@@ -54,149 +57,201 @@ Klasični Teslini transformatori koriste varničar i kondenzator da naprave te v
 
 ## Šta je u kesici
 
-| Komponenta | Količina | Uloga |
+| Komponenta | Oznaka na ploči | Uloga |
 |---|---|---|
-| Štampana pločica (PCB) 31 × 40 mm | 1 | nosi sve i povezuje |
-| Kalem (sekundar sa primarom) | 1 | srce uređaja — rezonantni transformator |
-| Tranzistor **BD243** (NPN, kućište TO-220) | 1 | elektronski prekidač koji se pali i gasi milione puta u sekundi |
-| Hladnjak 15 × 10 × 20 mm + zavrtanj | 1 | odvodi toplotu sa tranzistora |
-| Otpornik 10 kΩ | 2 | jedan „otvara" tranzistor na startu, drugi štiti LED indikator |
-| LED dioda 3 mm, plava | 2 | jedna pokazuje da ima napajanja, druga štiti bazu tranzistora |
-| Keramički kondenzator „105" (1 µF) | 2 | lokalni rezervoar energije za brze strujne udare |
-| Prekidač 8 × 8 mm (sa zadrškom) | 1 | uključi/isključi |
-| Utičnica DC005 | 1 | za adapter 9–12 V |
-| Mala sijalica | 1 | za eksperimente |
-| Distanceri i zavrtnji M2 | 4 + 4 | nožice |
+| Štampana pločica (PCB) 31 × 40 mm, sa **bakarnim prstenom** | L1 | nosi sve delove, a prsten na njoj je primar |
+| Kalem: bakarni valjak sa stotinama navoja tanke žice | L2 | sekundar, odnosno rezonator na čijem vrhu nastaje visok napon |
+| Tranzistor **BD243** (NPN, kućište TO-220) | Q1 | elektronski prekidač koji se pali i gasi milione puta u sekundi |
+| Hladnjak + zavrtanj | | odvodi toplotu sa tranzistora |
+| Otpornik 10 kΩ | R1 | daje startnu struju u bazu tranzistora |
+| Plava LED dioda | D1 | štiti bazu tranzistora i svetli kad kolo radi |
+| Keramički kondenzator „105" (1 µF) | C1 | lokalni rezervoar energije za brze strujne udare |
+| Prekidač 8 × 8 mm (sa zadrškom) | S1 | uključi/isključi |
+| Utičnica DC005 | J1 | za adapter 9–12 V |
+| Mala sijalica | | za eksperimente |
+| Distanceri i zavrtnji M2 | | nožice |
+
+Na pločici je mesto za po jedan otpornik, kondenzator i LED. Ako u kesici nađete po dva, drugi je rezervni.
 
 Oznaka „105" na kondenzatoru se čita kao **10 i pet nula** pikofarada: 10 · 10⁵ pF = 1 000 000 pF = 1 µF. Otpornik od 10 kΩ ima prstenove braon–crna–narandžasta.
 
 <!-- FOTO: delovi raspoređeni na stolu pre lemljenja -->
 
-## Šema i šta svaki deo zaista radi
+## Šema: šta je šta
+
+Šema izgleda zbunjujuće dok se ne vidi da se kolo sastoji od nekoliko malih „puteva" struje. Svaki ima svoju boju, i iste boje se koriste na crtežu pločice i u animaciji niže.
 
 <figure>
-<svg viewBox="0 0 680 370" role="img" aria-label="Šema slayer exciter kola: napajanje, prekidač, dva kondenzatora, LED indikator, otpornik baze, tranzistor BD243, primar i sekundar">
-  <g fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <!-- rails -->
-    <path d="M60 60 H100 M145 52 L104 60 M150 60 H440"/>
-    <path d="M60 330 H440"/>
-    <!-- battery -->
-    <path d="M60 60 V172 M60 184 V330"/>
-    <path d="M40 172 H80" stroke-width="3"/>
-    <path d="M50 184 H70" stroke-width="5"/>
-    <text x="84" y="170" font-size="12" fill="#333" stroke="none" font-family="sans-serif">+</text>
-    <!-- C1 C2 -->
-    <path d="M190 60 V183 M178 183 H202 M178 193 H202 M190 193 V330"/>
-    <path d="M235 60 V183 M223 183 H247 M223 193 H247 M235 193 V330"/>
-    <!-- R2 + LED1 -->
-    <path d="M290 60 V90 L282 96 L298 108 L282 120 L298 132 L282 144 L290 150 V200"/>
-    <path d="M276 200 H304 L290 222 Z M276 222 H304 M290 222 V330"/>
-    <path d="M308 204 l12 -8 M314 214 l12 -8" stroke-width="1.5"/>
-    <!-- R1 -->
-    <path d="M360 60 V100 L352 106 L368 118 L352 130 L368 142 L352 154 L360 160 V240 H410"/>
-    <!-- LED2 (cathode at base, anode at ground) -->
-    <path d="M360 240 V268 M346 268 H374 M346 292 H374 L360 268 Z M360 292 V330"/>
-    <path d="M330 272 l-12 -8 M330 284 l-12 -8" stroke-width="1.5"/>
-    <!-- Q1 -->
-    <path d="M410 215 V265" stroke-width="3"/>
-    <path d="M410 228 L440 205 V170"/>
-    <path d="M410 252 L440 275 V330"/>
-    <path d="M440 275 l-11 -1 l5 -8 Z" fill="#333"/>
-    <!-- L1 primary -->
-    <path d="M440 60 V80 c14 0 14 18 0 18 c14 0 14 18 0 18 c14 0 14 18 0 18 c14 0 14 18 0 18 V170"/>
-    <!-- L2 secondary -->
-    <path stroke="#c0392b" d="M535 80 c14 0 14 10 0 10 c14 0 14 10 0 10 c14 0 14 10 0 10 c14 0 14 10 0 10 c14 0 14 10 0 10 c14 0 14 10 0 10 c14 0 14 10 0 10 c14 0 14 10 0 10 c14 0 14 10 0 10 c14 0 14 10 0 10 c14 0 14 10 0 10 c14 0 14 10 0 10 c14 0 14 10 0 10 c14 0 14 10 0 10 c14 0 14 10 0 10 c14 0 14 10 0 10 c14 0 14 10 0 10 c14 0 14 10 0 10 V300"/>
-    <path d="M535 300 V310 H446 a6 6 0 0 0 -12 0 H380 V240"/>
+<svg viewBox="0 0 640 385" role="img" aria-label="Šema kola u bojama: napajanje sivo, glavna struja kroz primar narandžasto, startni otpornik ljubičasto, povratna sprega zeleno, zaštitna LED plavo, sekundar crveno">
+  <g fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <g stroke="#444">
+      <path d="M50 50 H88 M132 50 H350 M50 340 H350 M50 50 V165 M50 177 V340"/>
+      <path d="M92 50 L128 38"/>
+      <path d="M30 165 H70" stroke-width="3"/><path d="M40 177 H60" stroke-width="5"/>
+      <path d="M170 50 V185 M157 185 H183 M157 195 H183 M170 195 V340"/>
+      <path d="M250 250 H290"/>
+    </g>
+    <path stroke="#8e44ad" d="M250 50 V90 L242 96 L258 108 L242 120 L258 132 L242 144 L250 150 V250"/>
+    <path stroke="#2a78d6" d="M250 250 V278 M236 278 H264 M250 302 V340"/>
+    <path stroke="#2a78d6" fill="#dbe9fb" d="M236 302 H264 L250 278 Z"/>
+    <path stroke="#2a78d6" stroke-width="1.5" d="M226 284 l-10 -7 M226 296 l-10 -7"/>
+    <path stroke="#e67e22" d="M350 50 V80 c14 0 14 15 0 15 c14 0 14 15 0 15 c14 0 14 15 0 15 c14 0 14 15 0 15 V215 L320 238"/>
+    <path stroke="#e67e22" d="M320 262 L350 285 V340"/>
+    <path stroke="#444" stroke-width="3.5" d="M320 225 V275"/>
+    <path stroke="#1e9e62" d="M290 250 H320 M480 280 V300 M480 316 V326 H356 a6 6 0 0 0 -12 0 H290 V250"/>
+    <path stroke="#c0392b" d="M480 70 V80 c14 0 14 10 0 10 c14 0 14 10 0 10 c14 0 14 10 0 10 c14 0 14 10 0 10 c14 0 14 10 0 10 c14 0 14 10 0 10 c14 0 14 10 0 10 c14 0 14 10 0 10 c14 0 14 10 0 10 c14 0 14 10 0 10 c14 0 14 10 0 10 c14 0 14 10 0 10 c14 0 14 10 0 10 c14 0 14 10 0 10 c14 0 14 10 0 10 c14 0 14 10 0 10 c14 0 14 10 0 10 c14 0 14 10 0 10 c14 0 14 10 0 10 c14 0 14 10 0 10"/>
   </g>
-  <!-- dots -->
-  <g fill="#333">
-    <circle cx="190" cy="60" r="3.5"/><circle cx="235" cy="60" r="3.5"/><circle cx="290" cy="60" r="3.5"/><circle cx="360" cy="60" r="3.5"/>
-    <circle cx="190" cy="330" r="3.5"/><circle cx="235" cy="330" r="3.5"/><circle cx="290" cy="330" r="3.5"/><circle cx="360" cy="330" r="3.5"/>
-    <circle cx="360" cy="240" r="3.5"/><circle cx="380" cy="240" r="3.5"/>
-  </g>
-  <!-- coupling -->
-  <path d="M500 85 V170 M510 85 V170" stroke="#2a78d6" stroke-width="2" stroke-dasharray="5 4"/>
-  <!-- top terminal -->
-  <circle cx="535" cy="72" r="7" fill="#fff" stroke="#c0392b" stroke-width="2.5"/>
-  <path d="M543 64 l10 -10 l-4 9 l10 -6" fill="none" stroke="#8e44ad" stroke-width="2"/>
-  <!-- labels -->
+  <path d="M350 285 l-12 -1 l6 -9 Z" fill="#e67e22"/>
+  <rect x="471" y="300" width="18" height="16" fill="#fff7d6" stroke="#b58b00" stroke-width="1.5"/>
+  <circle cx="480" cy="62" r="7" fill="#fff" stroke="#c0392b" stroke-width="2.5"/>
+  <path d="M488 54 l10 -10 l-4 9 l10 -6" fill="none" stroke="#8e44ad" stroke-width="2"/>
+  <path d="M420 80 V145 M430 80 V145" stroke="#2a78d6" stroke-width="2" stroke-dasharray="5 4"/>
+  <g fill="#444"><circle cx="170" cy="50" r="3.5"/><circle cx="250" cy="50" r="3.5"/><circle cx="170" cy="340" r="3.5"/><circle cx="250" cy="340" r="3.5"/><circle cx="250" cy="250" r="3.5"/><circle cx="290" cy="250" r="3.5"/></g>
+  <g fill="#fff" stroke="#444" stroke-width="1.5"><circle cx="88" cy="50" r="3"/><circle cx="132" cy="50" r="3"/></g>
   <g font-family="-apple-system,Segoe UI,Roboto,sans-serif" font-size="13" fill="#333">
-    <text x="86" y="190">9–12 V</text>
-    <text x="104" y="44">prekidač</text>
-    <text x="172" y="192" text-anchor="end">C1</text><text x="172" y="206" text-anchor="end" font-size="11.5" fill="#666">1 µF</text>
-    <text x="253" y="192">C2</text><text x="253" y="206" font-size="11.5" fill="#666">1 µF</text>
-    <text x="304" y="125">R2</text><text x="304" y="139" font-size="11.5" fill="#666">10k</text>
-    <text x="298" y="245" font-size="12">LED1</text>
-    <text x="370" y="125">R1</text><text x="370" y="139" font-size="11.5" fill="#666">10k</text>
-    <text x="286" y="310" font-size="12">LED2</text>
-    <text x="386" y="232" font-size="12">B</text>
-    <text x="448" y="210" font-size="12">C</text><text x="448" y="276" font-size="12">E</text>
-    <text x="456" y="300" font-weight="600">Q1 BD243</text>
-    <text x="456" y="100">L1</text>
-    <text x="456" y="114" font-size="11.5" fill="#666">primar</text>
-    <text x="566" y="190" fill="#c0392b" font-weight="600">L2 sekundar</text>
-    <text x="566" y="206" font-size="11.5" fill="#666">stotine navoja</text>
-    <text x="566" y="220" font-size="11.5" fill="#666">tanke žice</text>
-    <text x="566" y="60" fill="#8e44ad">vrh: hiljade volti</text>
-    <text x="566" y="296" font-size="11.5" fill="#666">dno: nekoliko volti</text>
-    <text x="505" y="186" text-anchor="middle" font-size="11.5" fill="#2a78d6">sprega</text>
-    <text x="50" y="352" font-size="12" fill="#666">masa (−)</text>
+    <text x="78" y="162" font-weight="600">J1</text><text x="78" y="177" font-size="11.5" fill="#666">adapter 9–12 V</text>
+    <text x="92" y="30" font-weight="600">S1</text><text x="112" y="30" font-size="11.5" fill="#666">prekidač</text>
+    <text x="190" y="186" font-weight="600">C1</text><text x="190" y="201" font-size="11.5" fill="#666">1 µF</text>
+    <text x="266" y="112" fill="#8e44ad" font-weight="600">R1</text><text x="266" y="127" font-size="11.5" fill="#8e44ad">10 kΩ</text>
+    <text x="232" y="276" text-anchor="end" fill="#2a78d6" font-weight="600">D1</text><text x="232" y="314" text-anchor="end" font-size="11.5" fill="#2a78d6">LED</text>
+    <text x="300" y="242" font-size="11.5">B</text><text x="358" y="222" font-size="11.5">C</text><text x="358" y="292" font-size="11.5">E</text>
+    <text x="364" y="258" font-weight="600">Q1</text><text x="364" y="273" font-size="11.5" fill="#666">BD243</text>
+    <text x="366" y="100" fill="#e67e22" font-weight="600">L1</text><text x="366" y="115" font-size="11.5" fill="#666">primar</text><text x="366" y="129" font-size="11.5" fill="#666">(prsten)</text>
+    <text x="425" y="162" text-anchor="middle" font-size="11.5" fill="#2a78d6">sprega</text>
+    <text x="503" y="168" fill="#c0392b" font-weight="600">L2 sekundar</text><text x="503" y="184" font-size="11.5" fill="#666">bakarni valjak,</text><text x="503" y="198" font-size="11.5" fill="#666">stotine navoja</text>
+    <text x="512" y="40" fill="#8e44ad" font-weight="600">vrh: hiljade volti</text><text x="512" y="55" font-size="11.5" fill="#666">gornji kraj, slobodan</text>
+    <text x="480" y="312" text-anchor="middle" font-size="11" font-weight="700" fill="#7a5d00">T</text>
+    <text x="498" y="306" font-size="11.5" fill="#666">donji kraj L2</text><text x="498" y="320" font-size="11.5" fill="#666">lemi se u rupicu T</text>
+    <text x="50" y="364" font-size="11.5" fill="#888">masa (−)</text>
   </g>
 </svg>
-<figcaption>Tipična šema „slayer exciter" kola, po kojoj su napravljeni ovakvi BD243 kitovi. Raspored na samoj pločici izgleda drugačije, a pojedine serije kita mogu se razlikovati u sitnicama. Primar (L1) je namotan oko donjeg dela sekundara (L2); na šemi su nacrtani jedan pored drugog, a plave isprekidane linije označavaju magnetnu spregu. Prava vrednost broja navoja zavisi od serije kita.</figcaption>
+<figcaption>Šema kita, prema <a href="https://bitbyg.dk/wp-content/uploads/2018/01/Mini_Tesla_Coil_Kit_Instructions.pdf">uputstvu za isti BD243 kit</a>, prekrojena i obojena po funkciji. Primar L1 i sekundar L2 su na šemi nacrtani jedan pored drugog, a u stvarnosti valjak L2 stoji tačno na prstenu L1. Plave isprekidane linije označavaju da ih povezuje samo magnetno polje, a ne žica.</figcaption>
+</figure>
+
+<div class="legend" markdown="0">
+<p><span class="chip" style="background:#444"></span><b>Napajanje</b>: adapter (J1) → prekidač (S1) → plus i masa. C1 stoji između njih kao mali rezervoar.</p>
+<p><span class="chip" style="background:#e67e22"></span><b>Glavna struja</b>: plus → primar L1 (prsten) → tranzistor Q1 od kolektora (C) do emitera (E) → masa. Ovuda teče velika struja koja pravi magnetno polje.</p>
+<p><span class="chip" style="background:#8e44ad"></span><b>Start</b>: plus → R1 → baza (B). Mala struja koja pri uključenju „otvori" tranzistor.</p>
+<p><span class="chip" style="background:#1e9e62"></span><b>Povratna sprega</b>: dno sekundara → rupica T → baza. Preko ove žice sekundar sam određuje kad se tranzistor pali i gasi.</p>
+<p><span class="chip" style="background:#2a78d6"></span><b>Zaštita</b>: D1 između baze i mase. Ne da bazi da ode duboko u minus.</p>
+<p><span class="chip" style="background:#c0392b"></span><b>Sekundar L2</b>: valjak sa stotinama navoja. Dno mu je na nekoliko volti, a vrh na hiljadama.</p>
+</div>
+
+| Na šemi | Gde je na pločici | Šta radi |
+|---|---|---|
+| **J1** | crna utičnica za adapter | ulaz 9–12 V |
+| **S1** | plavo dugme | uključi/isključi |
+| **C1** | žuti kondenzator „105" | rezervoar za brze strujne udare |
+| **R1** | otpornik pored tranzistora | startna struja u bazu |
+| **Q1** | BD243 na hladnjaku | prekidač za struju kroz primar |
+| **B, C, E** | tri nožice tranzistora | **b**aza upravlja, kroz **k**olektor ulazi velika struja, kroz **e**miter izlazi ka masi |
+| **L1** | **beli bakarni prsten odštampan na pločici** | primar, samo jedan navoj |
+| **L2** | bakarni valjak zalepljen na prsten | sekundar, rezonator |
+| **T** | rupica unutar prstena | ovde se lemi **donji** kraj L2 |
+| **D1** | plava LED u centru prstena, ispod valjka | štiti bazu i svetli kad kolo radi |
+
+<figure>
+<svg viewBox="0 0 720 400" role="img" aria-label="Pločica odozgo sa označenim delovima: Q1 sa hladnjakom, R1, C1, S1, J1, prsten L1, mesto za valjak L2, rupica T i LED D1 u centru">
+  <rect x="40" y="30" width="440" height="340" rx="16" fill="#1f4f9e"/>
+  <g fill="#fcfcfb" stroke="#c9a640" stroke-width="3"><circle cx="458" cy="52" r="8"/><circle cx="458" cy="348" r="8"/><circle cx="62" cy="252" r="8"/></g>
+  <rect x="80" y="45" width="150" height="55" rx="3" fill="#1b1b1b"/>
+  <g fill="#bbb"><circle cx="120" cy="72" r="5"/><circle cx="155" cy="72" r="5"/><circle cx="190" cy="72" r="5"/></g>
+  <path d="M90 140 H190" stroke="#bbb" stroke-width="2"/>
+  <rect x="115" y="132" width="50" height="16" rx="7" fill="#5b8fd9"/>
+  <path d="M126 132 V148 M134 132 V148 M142 132 V148" stroke="#333" stroke-width="3"/>
+  <ellipse cx="100" cy="205" rx="17" ry="13" fill="#e3a33a"/>
+  <rect x="140" y="170" width="80" height="80" rx="4" fill="#eee"/><rect x="158" y="188" width="44" height="44" rx="3" fill="#2d7ff0"/>
+  <rect x="60" y="282" width="160" height="72" rx="4" fill="#111"/>
+  <circle cx="350" cy="200" r="105" fill="none" stroke="#f4f4f4" stroke-width="7"/>
+  <circle cx="350" cy="200" r="88" fill="none" stroke="#f4f4f4" stroke-width="3.5"/>
+  <circle cx="350" cy="200" r="72" fill="#f0a454" fill-opacity=".18" stroke="#f0a454" stroke-width="2" stroke-dasharray="6 5"/>
+  <circle cx="350" cy="200" r="10" fill="#8fbaff" stroke="#fff" stroke-width="2"/>
+  <rect x="300" y="126" width="16" height="16" fill="none" stroke="#fff" stroke-width="2"/><circle cx="308" cy="134" r="3" fill="#fff"/>
+  <g font-family="-apple-system,Segoe UI,Roboto,sans-serif" font-size="13" fill="#fff" font-weight="600">
+    <text x="155" y="118" text-anchor="middle">Q1 + hladnjak</text>
+    <text x="200" y="145">R1</text>
+    <text x="100" y="236" text-anchor="middle">C1</text>
+    <text x="180" y="268" text-anchor="middle">S1</text>
+    <text x="140" y="323" text-anchor="middle">J1</text>
+    <text x="294" y="139" text-anchor="end" font-size="12">T</text>
+  </g>
+  <g fill="none" stroke="#666" stroke-width="1.2">
+    <path d="M316 128 L334 62 H505"/>
+    <path d="M441 148 L505 132"/>
+    <path d="M421 212 L505 206"/>
+    <path d="M360 204 L505 276"/>
+  </g>
+  <g fill="#666"><circle cx="316" cy="128" r="2.5"/><circle cx="441" cy="148" r="2.5"/><circle cx="421" cy="212" r="2.5"/><circle cx="360" cy="204" r="2.5"/></g>
+  <g font-family="-apple-system,Segoe UI,Roboto,sans-serif" font-size="13" fill="#333">
+    <text x="512" y="60" font-weight="600" fill="#7a5d00">T</text><text x="526" y="60" fill="#666" font-size="12">rupica: ovde ide</text><text x="512" y="75" fill="#666" font-size="12">donji kraj L2</text>
+    <text x="512" y="130" font-weight="600" fill="#e67e22">L1 primar</text><text x="512" y="145" fill="#666" font-size="12">beli bakarni prsten,</text><text x="512" y="159" fill="#666" font-size="12">jedan navoj</text>
+    <text x="512" y="204" font-weight="600" fill="#c0392b">L2 sekundar</text><text x="512" y="219" fill="#666" font-size="12">valjak se lepi ovde,</text><text x="512" y="233" fill="#666" font-size="12">tačno na prsten</text>
+    <text x="512" y="274" font-weight="600" fill="#2a78d6">D1 plava LED</text><text x="512" y="289" fill="#666" font-size="12">u centru, svetli</text><text x="512" y="303" fill="#666" font-size="12">iznutra kroz valjak</text>
+  </g>
+</svg>
+<figcaption>Pločica odozgo, nacrtana po fotografijama iz uputstva. Beli prsten je primar L1, i valjak L2 se zalepi tačno na njega. Gornji kraj L2 ostaje slobodan i štrči nagore: na njemu nastaju korona i varnice.</figcaption>
 </figure>
 
 ### Kalem: primar i sekundar
 
-**Sekundar** je dugačak namotaj od nekoliko stotina navoja vrlo tanke lakirane bakarne žice na plastičnom telu. Lak je izolacija — zato navoji mogu da se dodiruju. Donji kraj sekundara je vezan za kolo, a gornji kraj je **slobodan** i završava se šiljkom. Tu nastaje visok napon.
+**Sekundar (L2)** je bakarni valjak: nekoliko stotina navoja vrlo tanke lakirane bakarne žice na plastičnom telu. Lak je izolacija, pa navoji mogu da se dodiruju. Narandžasta traka na krajevima je kapton, izolaciona traka koja trpi visoku temperaturu i drži kraj namotaja da se ne odmota. Valjak ima dva kraja žice:
 
-**Primar** je svega nekoliko navoja deblje žice oko dna sekundara. Kroz njega teče jaka struja iz tranzistora i pravi magnetno polje koje „gura" sekundar.
+- **donji kraj** se provuče kroz rupicu **T** u prstenu i zalemi. Preko njega je dno sekundara vezano za bazu tranzistora;
+- **gornji kraj** ostaje **slobodan** i štrči iz vrha. Tu je napon najveći, i tu nastaju korona i varnice.
 
-### Tranzistor BD243: prekidač bez ruku
+Ako vidite samo jedan kraj, drugi je obično kratak i sakriven ispod kapton trake ili provučen kroz unutrašnjost valjka. Multimetrom se lako proveri da li su dva kraja povezana. Kroz dvadesetak metara tanke žice instrument pokaže par desetina oma.
 
-Tranzistor je prekidač koji se ne uključuje prstom nego malom strujom na nožici koja se zove **baza (B)**. Kad u bazu uđe malo struje, između **kolektora (C)** i **emitera (E)** može da prođe velika struja — u našem kolu ona teče kroz primar. Kad baza ostane bez struje, prekidač se zatvara.
+**Primar (L1)** uopšte nije žica u kesici, nego **beli bakarni prsten odštampan na pločici**: praktično jedan navoj. Kroz njega teče jaka struja iz tranzistora i pravi magnetno polje koje „gura" sekundar koji stoji na njemu.
+
+### Tranzistor BD243 (Q1): prekidač bez ruku
+
+Tranzistor je prekidač koji se ne uključuje prstom nego malom strujom na nožici koja se zove **baza (B)**. Kad u bazu uđe malo struje, između **kolektora (C)** i **emitera (E)** može da prođe velika struja, a u našem kolu ona teče kroz primar. Kad baza ostane bez struje, prekidač se zatvara.
 
 BD243 je snažan, ali relativno spor tranzistor (projektovan je za mnogo niže frekvencije nego što ovde radi). Zato se ne pali i gasi čisto, nego deo vremena provodi „na pola puta", a tada se energija pretvara u toplotu. Otuda **hladnjak**: bez njega bi tranzistor za par minuta pregoreo.
 
 ### R1 (10 kΩ): paljenje motora
 
-Kad uključite prekidač, ništa ne osciluje — kolo treba neko da pokrene. Otpornik R1 pusti malu struju iz plusa u bazu, tranzistor počinje da provodi, i kroz primar krene struja. Od tog trenutka kolo samo sebe vodi.
+Kad uključite prekidač, ništa ne osciluje, jer kolo treba neko da pokrene. Otpornik R1 pusti malu struju iz plusa u bazu, tranzistor počinje da provodi, i kroz primar krene struja. Od tog trenutka kolo samo sebe vodi.
 
 ### Povratna sprega: kalem sam sebi kaže kad da gura
 
-Ovo je najpametniji deo kola. Pogledajte šemu: **donji kraj sekundara je vezan za bazu tranzistora.**
+Ovo je najpametniji deo kola. Pogledajte zelenu žicu na šemi: **donji kraj sekundara je preko rupice T vezan za bazu tranzistora.**
 
 1. Tranzistor provede → kroz primar raste struja → menja se magnetno polje.
 2. Promenljivo polje indukuje napon u sekundaru, a sekundar počne da osciluje na svojoj prirodnoj frekvenciji.
-3. Napon na dnu sekundara klati se gore-dole u ritmu te oscilacije — i taj napon je vezan za bazu. Kad ode u minus, tranzistor se gasi. Kad ode u plus, tranzistor se pali.
-4. Tranzistor se dakle pali i gasi **tačno u ritmu u kom sekundar „voli" da osciluje** — nekoliko miliona puta u sekundi.
+3. Napon na dnu sekundara klati se gore-dole u ritmu te oscilacije, a dno je vezano za bazu. Kad ode u minus, tranzistor se gasi. Kad ode u plus, tranzistor se pali.
+4. Tranzistor se dakle pali i gasi **tačno u ritmu u kom sekundar „voli" da osciluje**: nekoliko miliona puta u sekundi.
 
 Kao kad gurate dete na ljuljašci: ne gurate kad vam padne na pamet, nego kad se ljuljaška vrati do vas. Ovde ljuljaška sama javlja kad je vreme za guranje.
 
-### LED2: zaštita baze (i indikator da osciluje)
+### D1, plava LED: zaštita baze (i znak da kolo radi)
 
-Napon na dnu sekundara ide i u minus. Spoj baza–emiter tranzistora podnosi svega oko 5 V u obrnutom smeru, posle toga se oštećuje. LED2 je vezana **obrnuto** između baze i mase: dok je baza u plusu, LED ne provodi i ne smeta; čim baza ode u minus, LED provede i ne dozvoli da napon ode dublje. Bilo koja dioda bi radila taj posao, ali LED ima bonus — **zasvetli kad kolo osciluje**. Ako LED2 svetli, transformator radi.
+Napon na dnu sekundara ide i u minus. Spoj baza–emiter tranzistora podnosi svega oko 5 V u obrnutom smeru, posle toga se oštećuje. D1 je vezana **obrnuto** između baze i mase: dok je baza u plusu, LED ne provodi i ne smeta, a čim baza ode u minus, LED provede i ne dozvoli da napon ode dublje. Bilo koja dioda bi radila taj posao, ali LED ima bonus: **zasvetli kad kolo osciluje**. Pošto stoji u centru prstena, ispod valjka, osvetljava kalem iznutra.
 
-### LED1 + R2: indikator napajanja
+### C1 (1 µF): lokalni rezervoar
 
-Obična signalna lampica: „ima struje". Otpornik R2 ograničava struju kroz LED na oko 1 mA (12 V / 10 kΩ), inače bi je adapter odmah spalio.
-
-### C1 i C2 (2 × 1 µF): lokalni rezervoar
-
-Tranzistor vuče struju u udarima, milione puta u sekundi. Žica do adaptera je dugačka i ima svoju induktivnost — ne može dovoljno brzo da isporuči te udare. Kondenzatori stoje odmah pored kola i daju struju u trenutku kad zatreba, a dopunjavaju se iz adaptera u pauzama. Usput sprečavaju da visokofrekventne smetnje odu nazad u adapter.
+Tranzistor vuče struju u udarima, milione puta u sekundi. Žica do adaptera je dugačka i ima svoju induktivnost, pa ne može dovoljno brzo da isporuči te udare. Kondenzator stoji odmah pored kola i daje struju u trenutku kad zatreba, a dopunjava se iz adaptera u pauzama. Usput sprečava da visokofrekventne smetnje odu nazad u adapter.
 
 ### Prekidač, utičnica i sijalica
 
-Prekidač i utičnica su tu da se ne bi mrdao kabl. Sijalica iz kita je mala gasna sijalica — nema vlakno kao stara obična sijalica, unutra je gas pod niskim pritiskom. To je važno za sve eksperimente u nastavku.
+Prekidač i utičnica su tu da se ne bi mrdao kabl. Sijalica iz kita je mala gasna sijalica: nema vlakno kao stara obična sijalica, nego je unutra gas pod niskim pritiskom. To je važno za sve eksperimente u nastavku.
 
 <div class="box" markdown="1">
-**Iz radionice — sitnice koje vredi znati pre lemljenja**
+**Iz radionice: sitnice koje vredi znati pre lemljenja**
 
-- LED ima polaritet: duža nožica je anoda (+). Na pločici je ravna strana kruga katoda.
-- Tranzistor prvo pričvrstite zavrtnjem za hladnjak, pa tek onda lemite — tako nožice ne trpe silu.
-- Krajeve lakirane žice kalema treba ostrugati ili opaliti lemilicom dok se lak ne skine; lak ne provodi i tinol se neće uhvatiti.
+- LED ima polaritet: duža nožica je anoda (+). Pratite oznaku na pločici.
+- Tranzistor prvo pričvrstite zavrtnjem za hladnjak, pa tek onda lemite, da nožice ne trpe silu.
+- Donji kraj valjka prvo samo provucite kroz T, valjak zalepite superlepkom na prsten i opteretite nečim dok se lepak ne stegne, pa tek onda lemite.
+- Sa kraja lakirane žice lak se mora skinuti, lemilicom ili šmirglom. Lak ne provodi, i tinol se za njega neće uhvatiti.
 - Na 9 V baterije kolo radi, ali slabo. Za lepe varnice treba adapter od 12 V koji može da da bar 1 A.
 </div>
+
+## Animacija: jedan ciklus usporen milion puta
+
+Sve ovo se dešava nekoliko miliona puta u sekundi, pa se golim okom vidi samo rezultat. Animacija ispod usporava kolo toliko da se svaki korak vidi. Pritisnite **Uključi S1** i gledajte kako napon na vrhu raste iz ciklusa u ciklus. Zatim pauzirajte i idite **Korak →** po osmina ciklusa. Tačkice koje putuju po šemi su struja, u istim bojama kao gore. Na desnoj strani je kalem sa strane: probajte olovku i prst na vrhu, staklo i foliju između kalema i sijalice, i pomerajte sijalicu.
+
+<div id="tesla-sim"></div>
+<script src="/assets/tesla/sim.js" defer></script>
 
 ## Kako 12 volti postane nekoliko hiljada
 
@@ -208,13 +263,13 @@ Kad bi ovo bio običan transformator, napon na sekundaru bio bi:
 
 <p class="formula">U<sub>2</sub> = U<sub>1</sub> · N<sub>2</sub> / N<sub>1</sub></p>
 
-Za računicu pretpostavimo 3 navoja primara i 400 navoja sekundara (tačan broj zavisi od kita — vredi ga izbrojati ili proceniti iz debljine žice i dužine namotaja). Na kolektoru tranzistora napon u ovakvom kolu skače otprilike do dvostrukog napona napajanja, dakle oko 24 V:
+Primar je jedan navoj (prsten na pločici). Za sekundar pretpostavimo 400 navoja; tačan broj zavisi od kita, i vredi ga proceniti iz debljine žice i dužine namotaja. Na kolektoru tranzistora napon u ovakvom kolu skače otprilike do dvostrukog napona napajanja, dakle oko 24 V:
 
-<p class="formula">24 V · 400 / 3 ≈ 3200 V</p>
+<p class="formula">24 V · 400 / 1 ≈ 9600 V</p>
 
-Ali ovo nije pošteno, jer kalemovi nemaju gvozdeno jezgro. Samo mali deo magnetnog polja primara prolazi kroz sekundar. Taj deo se zove **koeficijent sprege k** i kod ovakvih kalemova je otprilike 0,1–0,2. Indukovani napon je onda:
+Ali ovo nije pošteno, jer kalemovi nemaju gvozdeno jezgro. Samo mali deo magnetnog polja primara prolazi kroz sekundar. Taj deo se zove **koeficijent sprege k**. Kod ravnog prstena ispod dugačkog valjka on je mali, reda veličine 0,05. Indukovani napon je onda:
 
-<p class="formula">U<sub>ind</sub> ≈ k · U<sub>1</sub> · N<sub>2</sub> / N<sub>1</sub> ≈ 0,15 · 3200 V ≈ 480 V</p>
+<p class="formula">U<sub>ind</sub> ≈ k · U<sub>1</sub> · N<sub>2</sub> / N<sub>1</sub> ≈ 0,05 · 9600 V ≈ 480 V</p>
 
 Dakle, sam transformator bez rezonancije dao bi par stotina volti. Lepo, ali to nije sve.
 
@@ -409,6 +464,7 @@ Najbolji deo ovog projekta nije bila munja, nego trenutak kad je jasno zašto č
 **Izvori i dalje čitanje**
 
 - [Kit komplet Teslin transformator 9–12 VDC — Mikroprinc](https://www.mikroprinc.com/sr/proizvod/kit-komplet-teslin-transformator-9-12vdc)
+- [Uputstvo i šema za isti BD243 kit (Circuit-Pop, PDF)](https://bitbyg.dk/wp-content/uploads/2018/01/Mini_Tesla_Coil_Kit_Instructions.pdf)
 - [Spisak komponenti identičnog BD243 kita (Surplustronics)](https://surplustronics.co.nz/products/11066-mini-tesla-coil-kit)
 - [Tesla coil — Wikipedia](https://en.wikipedia.org/wiki/Tesla_coil)
 - [Transformer — istorija, Wikipedia](https://en.wikipedia.org/wiki/Transformer#History)
